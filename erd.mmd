@@ -1,0 +1,76 @@
+erDiagram
+    USER {
+        int          user_id PK
+        string       display_name
+        string       email
+        enum         role            "Admin | Manager"
+        datetime     created_at
+        datetime     updated_at
+    }
+    COMPANY {
+        int          company_id PK
+        string       name
+    }
+    USER_COMPANY {
+        int          user_company_id PK
+        int          user_id  FK
+        int          company_id FK
+    }
+    MOVEMENT {
+        int          movement_id PK
+        int          company_id FK
+        enum         category         "RH | Achat | Vente | Compta | Autre"
+        string       type
+        decimal      amount           "valeur absolue"
+        enum         sign             "Entrée | Sortie"
+        date         movement_date
+        enum         reference_type   "Facture, Avoir, BL, Cmd CLI/Fourn."
+        string       reference
+        enum         reference_status
+        enum         source           "Odoo | Entrée manuelle"
+        string       note
+        enum         visibility       "Public | Hors simulation | Privée"
+        enum         status           "Actif | Désactivé | Archivé"
+        datetime     created_at
+        int          created_by  FK   "USER"
+        string       odoo_link
+        datetime     updated_at
+        int          updated_by  FK
+        datetime     disabled_at
+        int          disabled_by  FK
+        string       disable_reason
+        datetime     archived_at
+        int          archived_by  FK  "USER"
+        string       archive_reason
+        int          archive_version  "version number for same reference"
+    }
+    MANUAL_ENTRY {
+        int          movement_id PK,FK  "inherits MOVEMENT"
+        enum         frequency          "Une fois | Mensuel | Annuel"
+        json         dates_list         "liste des occurrences"
+    }
+    EXCEPTION {
+        int          exception_id PK
+        int          company_id FK
+        enum         category
+        string       type
+        enum         exception_type     "Auto, À ajouter, Partiel"
+        enum         criticity          "Critique | Majeure | Warning"
+        string       description
+        decimal      amount
+        enum         sign
+        enum         reference_type
+        string       reference
+        enum         reference_status
+        string       odoo_link
+        enum         status  "Actif | Désactivé"
+        datetime     created_at
+    }
+    USER       ||--o{ USER_COMPANY : has_access
+    COMPANY    ||--o{ USER_COMPANY : owned_by 
+    COMPANY    ||--o{ MOVEMENT     : logs
+    USER       ||--o{ MOVEMENT     : creates
+    USER       ||--o{ MOVEMENT     : archives
+    USER       ||--o{ MOVEMENT     : disables
+    MOVEMENT   ||--|| MANUAL_ENTRY : details
+    COMPANY    ||--o{ EXCEPTION    : raises
