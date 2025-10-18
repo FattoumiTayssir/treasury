@@ -1,40 +1,68 @@
-version: "3.8"
-
 services:
-  sql:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: mssql-express
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres-treasury
     environment:
-      ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: ${SA_PASSWORD}
-      MSSQL_PID: "Express"
-      MSSQL_COLLATION: ${MSSQL_COLLATION:-SQL_Latin1_General_CP1_CI_AS}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-appdb}
+      TZ: UTC
     ports:
-      - "${HOST_SQL_PORT:-1433}:1433"
+      - "${HOST_PG_PORT:-5432}:5432"
     volumes:
-      - mssql_data:/var/opt/mssql
+      - pg_data:/var/lib/postgresql/data
+      - ./init/postgres:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/1433' >/dev/null 2>&1"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 30
-      start_period: 20s
     restart: unless-stopped
+    networks:
+      - treasury-network
 
-  db-init:
-    image: mcr.microsoft.com/mssql-tools:latest
-    depends_on:
-      - sql
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: treasury-backend
     environment:
-      SA_PASSWORD: ${SA_PASSWORD}
-      DB_NAME: ${DB_NAME}
-      SQL_HOST: sql
-      SQL_PORT: 1433
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-appdb}
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
     volumes:
-      - ./init:/init:ro
-      - ./scripts:/scripts:ro
-    entrypoint: ["/bin/bash", "/scripts/db-init.sh"]
-    restart: "no"
+      - ./backend:/app
+    restart: unless-stopped
+    networks:
+      - treasury-network
+
+  frontend:
+    image: node:18-alpine
+    container_name: treasury-frontend
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host"
+    environment:
+      VITE_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./front2:/app
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - treasury-network
 
 volumes:
-  mssql_data:
+  pg_data:
+
+networks:
+  treasury-network:
+    driver: bridge

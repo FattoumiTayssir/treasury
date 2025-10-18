@@ -1,0 +1,25 @@
+[project]
+name = "treasury"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "tayssir.fattoumi",email = "tayssir.fattoumi@mssolutions-group.com"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "python-dotenv (>=1.1.1,<2.0.0)",
+    "psycopg2-binary (>=2.9,<3.0)",
+    "python-dateutil (>=2.9.0.post0,<3.0.0)",
+    "sqlalchemy (>=2.0.44,<3.0.0)",
+    "fastapi (>=0.119.0,<0.120.0)",
+    "uvicorn (>=0.38.0,<0.39.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+package-mode = false

@@ -1,0 +1,24 @@
+# syntax=docker/dockerfile:1
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# System deps for psycopg2-binary (should not be necessary, but keep minimal tools)
+RUN apt-get update -y && apt-get install -y --no-install-recommends \
+    ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install Python dependencies
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy code (compose will also mount the repo read-only at runtime)
+COPY etl_jobs/ /app/etl_jobs/
+COPY etl_achat_importation_to_csv.py /app/
+COPY etl_ventes_locales_to_csv.py /app/
+
+# Default command (overridden by docker-compose services)
+CMD ["python", "-m", "etl_jobs.job_achat_importation"]

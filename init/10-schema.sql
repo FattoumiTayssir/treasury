@@ -68,6 +68,7 @@ BEGIN
     (
         movement_id      INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Movement PRIMARY KEY,
         company_id       INT               NOT NULL,
+        manual_entry_id  INT               NULL,
         category         NVARCHAR(20)      NOT NULL,
         type             NVARCHAR(100)     NOT NULL,
         amount           DECIMAL(18,2)     NOT NULL,
@@ -105,6 +106,7 @@ BEGIN
         REFERENCES dbo.[User](user_id);
     ALTER TABLE dbo.Movement ADD CONSTRAINT FK_Movement_ArchivedBy FOREIGN KEY (archived_by)
         REFERENCES dbo.[User](user_id);
+    -- FK to Manual_Entry will be added after table creation below
 
     -- Enum constraints
     ALTER TABLE dbo.Movement ADD CONSTRAINT CK_Movement_category CHECK (category IN (N'RH', N'Achat', N'Vente', N'Compta', N'Autre'));
@@ -127,18 +129,20 @@ BEGIN
     CREATE UNIQUE INDEX UX_Movement_reference ON dbo.Movement(company_id, reference_type, reference, archive_version);
 END
 
--- MANUAL_ENTRY (1:1 with Movement)
+-- MANUAL_ENTRY (parent record for many Movements)
 IF OBJECT_ID(N'dbo.Manual_Entry', 'U') IS NULL
 BEGIN
     CREATE TABLE dbo.Manual_Entry
     (
-        movement_id INT            NOT NULL CONSTRAINT PK_Manual_Entry PRIMARY KEY,
-        frequency   NVARCHAR(20)   NOT NULL,
-        dates_list  NVARCHAR(MAX)  NOT NULL
+        manual_entry_id INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Manual_Entry PRIMARY KEY,
+        frequency       NVARCHAR(20)   NOT NULL,
+        dates_list      NVARCHAR(MAX)  NOT NULL
     );
 
-    ALTER TABLE dbo.Manual_Entry ADD CONSTRAINT FK_ManualEntry_Movement FOREIGN KEY (movement_id)
-        REFERENCES dbo.Movement(movement_id) ON DELETE CASCADE;
+    -- Establish relationship from movements to manual entry
+    ALTER TABLE dbo.Movement
+        ADD CONSTRAINT FK_Movement_ManualEntry FOREIGN KEY (manual_entry_id)
+            REFERENCES dbo.Manual_Entry(manual_entry_id);
 
     ALTER TABLE dbo.Manual_Entry ADD CONSTRAINT CK_ManualEntry_frequency CHECK (frequency IN (N'Une fois', N'Mensuel', N'Annuel'));
     ALTER TABLE dbo.Manual_Entry ADD CONSTRAINT CK_ManualEntry_dates_list_isjson CHECK (ISJSON(dates_list) = 1);

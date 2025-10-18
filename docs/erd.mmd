@@ -45,7 +45,7 @@ erDiagram
         int          archive_version  "version number for same reference"
     }
     MANUAL_ENTRY {
-        int          movement_id PK,FK  "inherits MOVEMENT"
+        int          manual_entry_id PK
         enum         frequency          "Une fois | Mensuel | Annuel"
         json         dates_list         "liste des occurrences"
     }
@@ -72,5 +72,5 @@ erDiagram
     USER       ||--o{ MOVEMENT     : creates
     USER       ||--o{ MOVEMENT     : archives
     USER       ||--o{ MOVEMENT     : disables
-    MOVEMENT   ||--|| MANUAL_ENTRY : details
+    MANUAL_ENTRY ||--o{ MOVEMENT     : generates
     COMPANY    ||--o{ EXCEPTION    : raises

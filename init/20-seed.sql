@@ -60,12 +60,13 @@ BEGIN
         FROM sys.all_objects
     )
     INSERT INTO dbo.Movement (
-        company_id, category, type, amount, sign, movement_date,
+        company_id, manual_entry_id, category, type, amount, sign, movement_date,
         reference_type, reference, reference_status, source, note, visibility,
         status, created_at, created_by, odoo_link, updated_at, updated_by, archive_version
     )
     SELECT
         c.company_id,
+        NULL AS manual_entry_id,
         cat.category,
         ty.type,
         CAST(ROUND((ABS(CHECKSUM(NEWID())) % 900000) / 100.0 + 10.00, 2) AS DECIMAL(18,2)) AS amount,
@@ -106,23 +107,21 @@ BEGIN
     CROSS APPLY (SELECT TOP 1 visibility FROM (VALUES (N'Public'),(N'Hors simulation'),(N'Privée')) t(visibility) ORDER BY NEWID()) vi;
 END
 
--- Manual_Entry for a subset of movements
+-- Manual_Entry seed
 IF NOT EXISTS (SELECT 1 FROM dbo.Manual_Entry)
 BEGIN
     DECLARE @today date = CAST(SYSUTCDATETIME() AS date);
 
-    ;WITH candidates AS (
-        SELECT TOP (40) m.movement_id
-        FROM dbo.Movement m
-        ORDER BY NEWID()
+    ;WITH seq AS (
+        SELECT TOP (40) ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n
+        FROM sys.all_objects
     ), freqs AS (
         SELECT N'Une fois' AS f UNION ALL
         SELECT N'Mensuel' UNION ALL
         SELECT N'Annuel'
     )
-    INSERT INTO dbo.Manual_Entry(movement_id, frequency, dates_list)
-    SELECT c.movement_id,
-           f.f,
+    INSERT INTO dbo.Manual_Entry(frequency, dates_list)
+    SELECT f.f,
            CASE f.f
              WHEN N'Une fois' THEN N'[' + N'"' + CONVERT(nvarchar(10), @today, 126) + N'"' + N']'
              WHEN N'Mensuel'  THEN (
@@ -134,10 +133,8 @@ BEGIN
                  FROM (VALUES (0),(1),(2)) y(v)
              )
            END AS dates_list
-    FROM candidates c
-    CROSS APPLY (SELECT TOP 1 f FROM freqs ORDER BY NEWID()) f
-    LEFT JOIN dbo.Manual_Entry me ON me.movement_id = c.movement_id
-    WHERE me.movement_id IS NULL;
+    FROM seq s
+    CROSS APPLY (SELECT TOP 1 f FROM freqs ORDER BY NEWID()) f;
 END
 
 -- Exceptions
