@@ -1,14 +1,16 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { manualEntriesApi } from '@/services/api'
 import { useToast } from '@/hooks/use-toast'
 import { useDataStore } from '@/store/dataStore'
-import { Category, Sign, Frequency, Visibility } from '@/types'
+import { Category, Sign, Frequency, Visibility, ManualEntry } from '@/types'
 
 interface ManualEntryFormProps {
+  entry?: ManualEntry
   onClose: () => void
 }
 
@@ -17,7 +19,7 @@ const signs: Sign[] = ['Entrée', 'Sortie']
 const frequencies: Frequency[] = ['Une seule fois', 'Mensuel', 'Annuel']
 const visibilities: Visibility[] = ['Public', 'Simulation privée']
 
-export function ManualEntryForm({ onClose }: ManualEntryFormProps) {
+export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
   const [formData, setFormData] = useState({
     category: '' as Category,
     type: '',
@@ -31,14 +33,46 @@ export function ManualEntryForm({ onClose }: ManualEntryFormProps) {
     visibility: 'Public' as Visibility,
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showUpdateConfirm, setShowUpdateConfirm] = useState(false)
   const { toast } = useToast()
-  const { fetchManualEntries, selectedCompanies } = useDataStore()
+  const { fetchManualEntries, fetchMovements, selectedCompanies } = useDataStore()
+  const isEditMode = !!entry
+
+  // Initialize form with entry data when editing
+  useEffect(() => {
+    if (entry) {
+      setFormData({
+        category: entry.category,
+        type: entry.type,
+        amount: entry.amount.toString(),
+        sign: entry.sign,
+        frequency: entry.frequency,
+        startDate: entry.start_date,
+        endDate: entry.end_date || '',
+        reference: entry.reference || '',
+        note: entry.note || '',
+        visibility: entry.visibility,
+      })
+    }
+  }, [entry])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    // Show confirmation dialog for updates
+    if (isEditMode) {
+      setShowUpdateConfirm(true)
+      return
+    }
+
+    // For creation, proceed directly
+    await saveEntry()
+  }
+
+  const saveEntry = async () => {
     // Validate that a company is selected
-    if (!selectedCompanies || selectedCompanies.length === 0) {
+    const companyId = entry?.companyId || selectedCompanies[0]
+    if (!companyId) {
       toast({
         variant: 'destructive',
         title: 'Erreur',
@@ -50,34 +84,66 @@ export function ManualEntryForm({ onClose }: ManualEntryFormProps) {
     setIsSubmitting(true)
 
     try {
-      await manualEntriesApi.create({
-        companyId: selectedCompanies[0],
-        company_id: parseInt(selectedCompanies[0]),
-        category: formData.category,
-        type: formData.type,
-        amount: parseFloat(formData.amount),
-        sign: formData.sign,
-        frequency: formData.frequency,
-        start_date: formData.startDate,
-        end_date: formData.frequency === 'Une seule fois' ? formData.startDate : formData.endDate,
-        reference: formData.reference || undefined,
-        note: formData.note || undefined,
-        visibility: formData.visibility,
-        status: 'Actif',
-      } as any)
+      if (isEditMode) {
+        // Use delete + insert approach for updates
+        // First delete the old entry and its movements
+        await manualEntriesApi.delete([entry.id])
+        
+        // Then create a new entry with updated data
+        await manualEntriesApi.create({
+          companyId: companyId,
+          company_id: parseInt(companyId),
+          category: formData.category,
+          type: formData.type,
+          amount: parseFloat(formData.amount),
+          sign: formData.sign,
+          frequency: formData.frequency,
+          start_date: formData.startDate,
+          end_date: formData.frequency === 'Une seule fois' ? formData.startDate : formData.endDate,
+          reference: formData.reference || undefined,
+          note: formData.note || undefined,
+          visibility: formData.visibility,
+          status: 'Actif',
+        } as any)
 
-      toast({
-        title: 'Entrée créée',
-        description: 'L\'entrée manuelle a été ajoutée avec succès',
-      })
+        toast({
+          title: 'Entrée modifiée',
+          description: 'L\'entrée manuelle a été mise à jour avec succès',
+        })
+      } else {
+        // Create new entry
+        await manualEntriesApi.create({
+          companyId: companyId,
+          company_id: parseInt(companyId),
+          category: formData.category,
+          type: formData.type,
+          amount: parseFloat(formData.amount),
+          sign: formData.sign,
+          frequency: formData.frequency,
+          start_date: formData.startDate,
+          end_date: formData.frequency === 'Une seule fois' ? formData.startDate : formData.endDate,
+          reference: formData.reference || undefined,
+          note: formData.note || undefined,
+          visibility: formData.visibility,
+          status: 'Actif',
+        } as any)
+
+        toast({
+          title: 'Entrée créée',
+          description: 'L\'entrée manuelle a été ajoutée avec succès',
+        })
+      }
       
-      fetchManualEntries()
+      // Refresh both manual entries and movements
+      await fetchManualEntries()
+      await fetchMovements()
+      setShowUpdateConfirm(false)
       onClose()
     } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: error.response?.data?.message || 'Impossible de créer l\'entrée',
+        description: error.response?.data?.message || `Impossible de ${isEditMode ? 'modifier' : 'créer'} l\'entrée`,
       })
     } finally {
       setIsSubmitting(false)
@@ -85,6 +151,7 @@ export function ManualEntryForm({ onClose }: ManualEntryFormProps) {
   }
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
@@ -262,9 +329,21 @@ export function ManualEntryForm({ onClose }: ManualEntryFormProps) {
           Annuler
         </Button>
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Création...' : 'Créer'}
+          {isSubmitting ? (isEditMode ? 'Modification...' : 'Création...') : (isEditMode ? 'Modifier' : 'Créer')}
         </Button>
       </div>
     </form>
+
+    {/* Update Confirmation Dialog */}
+    <ConfirmationDialog
+      open={showUpdateConfirm}
+      onOpenChange={setShowUpdateConfirm}
+      title="Confirmer la modification"
+      description="La modification d'une entrée manuelle supprimera les anciens mouvements et en créera de nouveaux. Êtes-vous sûr de vouloir continuer ?"
+      confirmText="Confirmer"
+      onConfirm={saveEntry}
+      isLoading={isSubmitting}
+    />
+  </>
   )
 }
