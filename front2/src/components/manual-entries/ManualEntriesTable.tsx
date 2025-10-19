@@ -183,6 +183,13 @@ export function ManualEntriesTable({ entries, isLoading }: ManualEntriesTablePro
                     <div className="text-sm">
                       {entry.frequency === 'Une seule fois' ? (
                         <div>{formatDate(entry.start_date)}</div>
+                      ) : entry.frequency === 'Dates personnalisées' && entry.custom_dates ? (
+                        <span 
+                          className="cursor-help underline decoration-dotted" 
+                          title={entry.custom_dates.map(d => formatDate(d)).join(', ')}
+                        >
+                          {entry.custom_dates.length} date{entry.custom_dates.length > 1 ? 's' : ''} personnalisée{entry.custom_dates.length > 1 ? 's' : ''}
+                        </span>
                       ) : (
                         <>
                           <div>{formatDate(entry.start_date)} → {entry.end_date ? formatDate(entry.end_date) : '-'}</div>

@@ -22,6 +22,11 @@ def get_manual_entries(db: Session = Depends(get_db)):
         ).first()
         
         if movement:
+            # Extract custom_dates from recurrence JSON if present
+            custom_dates = None
+            if entry.recurrence and isinstance(entry.recurrence, dict):
+                custom_dates = entry.recurrence.get('custom_dates')
+            
             result.append(schemas.ManualEntryResponse(
                 id=str(entry.manual_entry_id),
                 companyId=str(movement.company_id),
@@ -34,6 +39,7 @@ def get_manual_entries(db: Session = Depends(get_db)):
                 frequency=entry.frequency,
                 start_date=entry.start_date.isoformat(),
                 end_date=entry.end_date.isoformat() if entry.end_date else None,
+                custom_dates=custom_dates,
                 note=movement.note,
                 visibility=movement.visibility,
                 status=movement.status,
@@ -59,6 +65,11 @@ def get_manual_entry(id: str, db: Session = Depends(get_db)):
     if not movement:
         raise HTTPException(status_code=404, detail="Movement not found for this manual entry")
     
+    # Extract custom_dates from recurrence JSON if present
+    custom_dates = None
+    if entry.recurrence and isinstance(entry.recurrence, dict):
+        custom_dates = entry.recurrence.get('custom_dates')
+    
     return schemas.ManualEntryResponse(
         id=str(entry.manual_entry_id),
         companyId=str(movement.company_id),
@@ -71,6 +82,7 @@ def get_manual_entry(id: str, db: Session = Depends(get_db)):
         frequency=entry.frequency,
         start_date=entry.start_date.isoformat(),
         end_date=entry.end_date.isoformat() if entry.end_date else None,
+        custom_dates=custom_dates,
         note=movement.note,
         visibility=movement.visibility,
         status=movement.status,
@@ -92,52 +104,89 @@ def create_manual_entry(entry: schemas.ManualEntryCreate, db: Session = Depends(
     db_entry = models.ManualEntry(
         frequency=entry.frequency,
         start_date=start_date,
-        end_date=end_date if entry.frequency != "Une seule fois" else None,
+        end_date=end_date if entry.frequency not in ["Une seule fois", "Dates personnalisées"] else None,
+        recurrence={"custom_dates": entry.custom_dates} if entry.custom_dates else None,
     )
     db.add(db_entry)
     db.flush()
     
     # Generate movements based on frequency and date range
     movements = []
-    current_date = start_date
     movement_index = 0
     
-    while current_date <= end_date and current_date >= today:
-        # Generate unique reference for each movement
-        if entry.reference:
-            unique_ref = f"{entry.reference}-{movement_index+1}"
-        else:
-            unique_ref = f"EM-{db_entry.manual_entry_id}-{movement_index+1}"
+    # Handle custom dates
+    if entry.frequency == "Dates personnalisées" and entry.custom_dates:
+        dates_to_process = [datetime.strptime(d, "%Y-%m-%d").date() for d in entry.custom_dates]
+        # Filter future dates only
+        dates_to_process = [d for d in dates_to_process if d >= today]
+        dates_to_process.sort()
         
-        movement = models.Movement(
-            company_id=entry.company_id,
-            manual_entry_id=db_entry.manual_entry_id,
-            category=entry.category,
-            type=entry.type,
-            amount=entry.amount,
-            sign=entry.sign,
-            movement_date=current_date,
-            reference_type=entry.reference_type or "Facture",
-            reference=unique_ref,
-            source="Entrée manuelle",
-            note=entry.note,
-            visibility=entry.visibility,
-            status=entry.status,
-            created_by=1  # TODO: Get from auth
-        )
-        db.add(movement)
-        movements.append(movement)
-        movement_index += 1
+        for date_obj in dates_to_process:
+            # Generate unique reference for each movement
+            if entry.reference:
+                unique_ref = f"{entry.reference}-{movement_index+1}"
+            else:
+                unique_ref = f"EM-{db_entry.manual_entry_id}-{movement_index+1}"
+            
+            movement = models.Movement(
+                company_id=entry.company_id,
+                manual_entry_id=db_entry.manual_entry_id,
+                category=entry.category,
+                type=entry.type,
+                amount=entry.amount,
+                sign=entry.sign,
+                movement_date=date_obj,
+                reference_type=entry.reference_type or "Facture",
+                reference=unique_ref,
+                source="Entrée manuelle",
+                note=entry.note,
+                visibility=entry.visibility,
+                status=entry.status,
+                created_by=1  # TODO: Get from auth
+            )
+            db.add(movement)
+            movements.append(movement)
+            movement_index += 1
+    else:
+        # Regular frequency-based generation
+        current_date = start_date
         
-        # Calculate next date based on frequency
-        if entry.frequency == "Une seule fois":
-            break
-        elif entry.frequency == "Mensuel":
-            current_date = current_date + relativedelta(months=1)
-        elif entry.frequency == "Annuel":
-            current_date = current_date + relativedelta(years=1)
-        else:
-            break
+        while current_date <= end_date and current_date >= today:
+            # Generate unique reference for each movement
+            if entry.reference:
+                unique_ref = f"{entry.reference}-{movement_index+1}"
+            else:
+                unique_ref = f"EM-{db_entry.manual_entry_id}-{movement_index+1}"
+            
+            movement = models.Movement(
+                company_id=entry.company_id,
+                manual_entry_id=db_entry.manual_entry_id,
+                category=entry.category,
+                type=entry.type,
+                amount=entry.amount,
+                sign=entry.sign,
+                movement_date=current_date,
+                reference_type=entry.reference_type or "Facture",
+                reference=unique_ref,
+                source="Entrée manuelle",
+                note=entry.note,
+                visibility=entry.visibility,
+                status=entry.status,
+                created_by=1  # TODO: Get from auth
+            )
+            db.add(movement)
+            movements.append(movement)
+            movement_index += 1
+            
+            # Calculate next date based on frequency
+            if entry.frequency == "Une seule fois":
+                break
+            elif entry.frequency == "Mensuel":
+                current_date = current_date + relativedelta(months=1)
+            elif entry.frequency == "Annuel":
+                current_date = current_date + relativedelta(years=1)
+            else:
+                break
     
     if not movements:
         raise HTTPException(status_code=400, detail="No future movements to create in the specified date range")
@@ -147,6 +196,11 @@ def create_manual_entry(entry: schemas.ManualEntryCreate, db: Session = Depends(
     
     # Get the first movement for response
     first_movement = movements[0]
+    
+    # Extract custom_dates from recurrence JSON if present
+    custom_dates = None
+    if db_entry.recurrence and isinstance(db_entry.recurrence, dict):
+        custom_dates = db_entry.recurrence.get('custom_dates')
     
     return schemas.ManualEntryResponse(
         id=str(db_entry.manual_entry_id),
@@ -160,6 +214,7 @@ def create_manual_entry(entry: schemas.ManualEntryCreate, db: Session = Depends(
         frequency=db_entry.frequency,
         start_date=db_entry.start_date.isoformat(),
         end_date=db_entry.end_date.isoformat() if db_entry.end_date else None,
+        custom_dates=custom_dates,
         note=first_movement.note,
         visibility=first_movement.visibility,
         status=first_movement.status,

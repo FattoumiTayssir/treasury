@@ -4,6 +4,27 @@ Ce fichier documente tous les changements apportés à la spécification Odoo.
 
 ---
 
+## [2025-10-19] - Ajout du taux de change pour les achats d'importation
+
+### Changements
+
+#### Section 1.2 - Achat Importation - Taux de change (NOUVELLE SECTION)
+- **Ajout** : Nouvelle section décrivant la gestion du taux de change
+- **Champ Odoo** : `custom_rate` (type: float, readonly) dans l'objet `account.move`
+- **Raison** : Les achats d'importation nécessitent l'application d'un taux de change pour calculer le montant final en devise locale
+
+#### Section 1.3 - Achat Importation - Exceptions (anciennement 1.2)
+- **Ajout** : Nouvelle exception "Facture d'importation sans taux de change (custom_rate manquant ou = 0)"
+- **Raison** : Les factures d'importation doivent obligatoirement avoir un taux de change valide. En absence de taux, elles doivent être traitées manuellement
+
+### Impact
+Ces changements affectent :
+- `etl_jobs/achat_importation_upsert.py` - doit récupérer et appliquer le champ `custom_rate`
+- Table `Movement` - ajout d'une colonne `exchange_rate` pour stocker le taux de change
+- Logique métier - création d'exceptions pour les factures sans taux de change
+
+---
+
 ## [2025-10-18] - Exclusion des factures payées
 
 ### Changements

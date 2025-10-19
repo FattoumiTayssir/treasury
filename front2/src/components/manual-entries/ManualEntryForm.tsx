@@ -16,7 +16,7 @@ interface ManualEntryFormProps {
 
 const categories: Category[] = ['RH', 'Achat', 'Vente', 'Compta', 'Autre']
 const signs: Sign[] = ['Entrée', 'Sortie']
-const frequencies: Frequency[] = ['Une seule fois', 'Mensuel', 'Annuel']
+const frequencies: Frequency[] = ['Une seule fois', 'Mensuel', 'Annuel', 'Dates personnalisées']
 const visibilities: Visibility[] = ['Public', 'Simulation privée']
 
 export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
@@ -32,6 +32,8 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
     note: '',
     visibility: 'Public' as Visibility,
   })
+  const [customDates, setCustomDates] = useState<string[]>([])
+  const [newDate, setNewDate] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showUpdateConfirm, setShowUpdateConfirm] = useState(false)
   const { toast } = useToast()
@@ -53,8 +55,23 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
         note: entry.note || '',
         visibility: entry.visibility,
       })
+      // Initialize custom dates if frequency is custom
+      if (entry.frequency === 'Dates personnalisées' && entry.custom_dates) {
+        setCustomDates(entry.custom_dates)
+      }
     }
   }, [entry])
+
+  const addCustomDate = () => {
+    if (newDate && !customDates.includes(newDate)) {
+      setCustomDates([...customDates, newDate].sort())
+      setNewDate('')
+    }
+  }
+
+  const removeCustomDate = (dateToRemove: string) => {
+    setCustomDates(customDates.filter(d => d !== dateToRemove))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -80,6 +97,16 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
       })
       return
     }
+
+    // Validate custom dates
+    if (formData.frequency === 'Dates personnalisées' && customDates.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: 'Veuillez ajouter au moins une date',
+      })
+      return
+    }
     
     setIsSubmitting(true)
 
@@ -98,8 +125,9 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
           amount: parseFloat(formData.amount),
           sign: formData.sign,
           frequency: formData.frequency,
-          start_date: formData.startDate,
-          end_date: formData.frequency === 'Une seule fois' ? formData.startDate : formData.endDate,
+          start_date: formData.frequency === 'Dates personnalisées' ? customDates[0] : formData.startDate,
+          end_date: formData.frequency === 'Une seule fois' || formData.frequency === 'Dates personnalisées' ? undefined : formData.endDate,
+          custom_dates: formData.frequency === 'Dates personnalisées' ? customDates : undefined,
           reference: formData.reference || undefined,
           note: formData.note || undefined,
           visibility: formData.visibility,
@@ -120,8 +148,9 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
           amount: parseFloat(formData.amount),
           sign: formData.sign,
           frequency: formData.frequency,
-          start_date: formData.startDate,
-          end_date: formData.frequency === 'Une seule fois' ? formData.startDate : formData.endDate,
+          start_date: formData.frequency === 'Dates personnalisées' ? customDates[0] : formData.startDate,
+          end_date: formData.frequency === 'Une seule fois' || formData.frequency === 'Dates personnalisées' ? undefined : formData.endDate,
+          custom_dates: formData.frequency === 'Dates personnalisées' ? customDates : undefined,
           reference: formData.reference || undefined,
           note: formData.note || undefined,
           visibility: formData.visibility,
@@ -250,6 +279,46 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
               }
               required
             />
+          </div>
+        ) : formData.frequency === 'Dates personnalisées' ? (
+          <div className="col-span-2 space-y-2">
+            <Label>Dates personnalisées *</Label>
+            <div className="flex gap-2">
+              <Input
+                type="date"
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+                placeholder="Sélectionner une date"
+              />
+              <Button type="button" onClick={addCustomDate} disabled={!newDate}>
+                Ajouter
+              </Button>
+            </div>
+            {customDates.length > 0 && (
+              <div className="mt-3 space-y-2">
+                <p className="text-sm font-medium">{customDates.length} date(s) ajoutée(s):</p>
+                <div className="flex flex-wrap gap-2">
+                  {customDates.map((date) => (
+                    <div
+                      key={date}
+                      className="flex items-center gap-2 bg-muted px-3 py-1 rounded-md text-sm"
+                    >
+                      <span>{new Date(date).toLocaleDateString('fr-FR')}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeCustomDate(date)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Ajoutez une ou plusieurs dates pour créer des mouvements à ces dates spécifiques
+            </p>
           </div>
         ) : (
           <>

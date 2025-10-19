@@ -115,6 +115,7 @@ class ManualEntryBase(BaseModel):
 
 class ManualEntryCreate(ManualEntryBase):
     company_id: int
+    custom_dates: Optional[List[str]] = None
 
 class ManualEntryUpdate(BaseModel):
     category: Optional[CategoryType] = None
@@ -141,6 +142,7 @@ class ManualEntryResponse(BaseModel):
     frequency: FrequencyType
     start_date: str
     end_date: Optional[str] = None
+    custom_dates: Optional[List[str]] = None
     note: Optional[str] = None
     visibility: VisibilityType
     status: StatusType

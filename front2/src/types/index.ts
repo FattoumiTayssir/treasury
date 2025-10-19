@@ -3,7 +3,7 @@ export type Sign = 'Entrée' | 'Sortie'
 export type Source = 'Odoo' | 'Entrée manuelle'
 export type Visibility = 'Public' | 'Simulation privée' | 'Tout'
 export type Status = 'Actif' | 'Désactivé'
-export type Frequency = 'Une seule fois' | 'Mensuel' | 'Annuel'
+export type Frequency = 'Une seule fois' | 'Mensuel' | 'Annuel' | 'Dates personnalisées'
 export type ReferenceType =
   | 'Facture de vente'
   | 'Avoir de vente'
@@ -62,6 +62,7 @@ export interface ManualEntry {
   frequency: Frequency
   start_date: string
   end_date?: string
+  custom_dates?: string[]
   note?: string
   visibility: Visibility
   status: Status

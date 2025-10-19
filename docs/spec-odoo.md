@@ -26,7 +26,7 @@ donc signalés comme **Exceptions** ).
  3  Achats locaux avec échéance Automatique + Exceptions
 ```
 ```
-⚠️ Élimination  : Charges fiscales (TVA), Achats récurrents et Transport Swift sortent du périmètre
+⚠️ Élimination  : Charges fiscales ( TVA ), Achats récurrents et Transport Swift sortent du périmètre
 automatisé et seront traités 100 % manuellement dans Power Apps.
 ```
 ## 1. Achat Importation
@@ -40,10 +40,19 @@ Factures à l'état "brouillon" ou "confirmée" ayant une date d'échéance futu
 Numéro de demande d'achat commençant obligatoirement par « CE » (importation).
 Exclure les factures déjà payées (payment_state = "paid").
 ```
-### 1.2 Exceptions (traitement manuel)
+### 1.2 Taux de change
+
+```
+Pour les achats d'importation, le taux de change doit être pris en compte.
+Champ Odoo : custom_rate (type : float, readonly)
+Objet : account.move
+Le taux est appliqué au montant pour le calcul final.
+```
+### 1.3 Exceptions (traitement manuel)
 
 ```
 Facture (brouillon ou confirmée) dont la date d'échéance est < date système.
+Facture d'importation sans taux de change (custom_rate manquant ou = 0).
 ```
 
 
