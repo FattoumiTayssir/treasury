@@ -51,7 +51,7 @@ export const manualEntriesApi = {
 export const exceptionsApi = {
   getAll: () => api.get<Exception[]>('/exceptions'),
   getById: (id: string) => api.get<Exception>(`/exceptions/${id}`),
-  updateState: (ids: string[], state: 'Visible' | 'Cachée') =>
+  updateState: (ids: string[], state: 'Actif' | 'Désactivé') =>
     api.post('/exceptions/update-state', { ids, state }),
   refresh: () => api.post('/exceptions/refresh'),
   getLastRefresh: () => api.get<{ lastRefresh: string }>('/exceptions/last-refresh'),

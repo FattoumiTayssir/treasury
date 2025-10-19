@@ -46,10 +46,10 @@ export function Movements() {
     }
   }
 
-  // Filter by selected company first
+  // Filter by selected company first - show nothing if no company selected
   const companyFilteredMovements = selectedCompanies.length > 0
     ? movements.filter(m => selectedCompanies.includes(m.companyId))
-    : movements
+    : []
   
   const filteredMovements = applyMovementFilters(companyFilteredMovements, filters)
 

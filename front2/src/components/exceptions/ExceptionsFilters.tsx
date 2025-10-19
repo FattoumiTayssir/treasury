@@ -11,7 +11,7 @@ interface ExceptionsFiltersProps {
 }
 
 const criticalities: Criticality[] = ['Critique', 'Majeure', 'Warning']
-const states: ExceptionState[] = ['Visible', 'Cachée']
+const states: ExceptionState[] = ['Actif', 'Désactivé']
 
 export function ExceptionsFilters({ filters, onFiltersChange }: ExceptionsFiltersProps) {
   const handleReset = () => {

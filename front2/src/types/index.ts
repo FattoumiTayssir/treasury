@@ -23,7 +23,7 @@ export type ExceptionType =
   | 'Mouvements partiellement ajoutés : à compléter'
 
 export type Criticality = 'Critique' | 'Majeure' | 'Warning'
-export type ExceptionState = 'Visible' | 'Cachée'
+export type ExceptionState = 'Actif' | 'Désactivé'
 
 export interface FinancialMovement {
   id: string

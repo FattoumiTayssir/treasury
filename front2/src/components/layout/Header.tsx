@@ -1,4 +1,4 @@
-import { Bell, LogOut, User, Building2 } from 'lucide-react'
+import { LogOut, User, Building2 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { useDataStore } from '@/store/dataStore'
 import { Button } from '@/components/ui/button'
@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { NotificationDropdown } from './NotificationDropdown'
 import { useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
 
@@ -59,10 +60,7 @@ export function Header() {
         </div>
         
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-          </Button>
+          <NotificationDropdown />
           
           <div className="flex items-center gap-3 pl-3 border-l border-gray-200">
             <div className="text-right">

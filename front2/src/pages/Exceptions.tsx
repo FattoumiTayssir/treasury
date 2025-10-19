@@ -46,10 +46,10 @@ export function Exceptions() {
     }
   }
 
-  // Filter by selected company first
+  // Filter by selected company first - show nothing if no company selected
   const companyFilteredExceptions = selectedCompanies.length > 0
     ? exceptions.filter(e => selectedCompanies.includes(e.companyId))
-    : exceptions
+    : []
   
   const filteredExceptions = applyExceptionFilters(companyFilteredExceptions, filters)
 

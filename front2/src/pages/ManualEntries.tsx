@@ -15,10 +15,10 @@ export function ManualEntries() {
     fetchManualEntries()
   }, [])
 
-  // Filter by selected company
+  // Filter by selected company - show nothing if no company selected
   const filteredManualEntries = selectedCompanies.length > 0
     ? manualEntries.filter(entry => selectedCompanies.includes(entry.companyId))
-    : manualEntries
+    : []
 
   return (
     <div className="space-y-6">

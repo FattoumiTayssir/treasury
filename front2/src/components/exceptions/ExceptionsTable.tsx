@@ -86,7 +86,7 @@ export function ExceptionsTable({ exceptions, isLoading }: ExceptionsTableProps)
                     )}
                   </td>
                   <td className="p-4 text-center">
-                    {exception.state === 'Visible' ? (
+                    {exception.state === 'Actif' ? (
                       <Eye className="w-4 h-4 mx-auto text-primary" />
                     ) : (
                       <EyeOff className="w-4 h-4 mx-auto text-muted-foreground" />
