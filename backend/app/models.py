@@ -119,3 +119,42 @@ class Exception(Base):
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     
     company = relationship("Company", back_populates="exceptions")
+
+class TreasuryBalance(Base):
+    __tablename__ = "treasury_balance"
+    
+    treasury_balance_id = Column(Integer, primary_key=True, index=True)
+    company_id = Column(Integer, ForeignKey("company.company_id"), nullable=False)
+    amount = Column(Numeric(18, 2), nullable=False)
+    reference_date = Column(Date, nullable=False)
+    updated_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
+    updated_by = Column(Integer, ForeignKey("User.user_id"), nullable=False)
+    notes = Column(Text, nullable=True)
+    
+    company = relationship("Company")
+    updater = relationship("User", foreign_keys=[updated_by])
+    sources = relationship("TreasuryBalanceSource", back_populates="treasury_balance", cascade="all, delete-orphan")
+    
+    __table_args__ = (
+        Index("IX_TreasuryBalance_company", "company_id"),
+        Index("IX_TreasuryBalance_updated_by", "updated_by"),
+        UniqueConstraint("company_id", "reference_date", name="UX_TreasuryBalance_company"),
+    )
+
+
+class TreasuryBalanceSource(Base):
+    __tablename__ = "treasury_balance_source"
+    
+    source_id = Column(Integer, primary_key=True, index=True)
+    treasury_balance_id = Column(Integer, ForeignKey("treasury_balance.treasury_balance_id", ondelete="CASCADE"), nullable=False)
+    source_name = Column(String(255), nullable=False)  # e.g., "BNP Account", "Cash", "Crédit Agricole"
+    amount = Column(Numeric(18, 2), nullable=False)
+    source_date = Column(Date, nullable=False)  # Date when this source was checked
+    notes = Column(Text, nullable=True)
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+    
+    treasury_balance = relationship("TreasuryBalance", back_populates="sources")
+    
+    __table_args__ = (
+        Index("IX_TreasuryBalanceSource_treasury", "treasury_balance_id"),
+    )

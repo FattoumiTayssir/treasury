@@ -67,3 +67,86 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Tremor Component Fixes */
+@layer components {
+  /* Fix dropdown/popover z-index and background */
+  [role="listbox"],
+  [role="menu"],
+  .tremor-DateRangePicker-calendar,
+  .tremor-MultiSelect-dropdown {
+    @apply bg-white shadow-lg border border-gray-200 rounded-lg z-50 !important;
+  }
+
+  /* Fix chart tooltips */
+  .recharts-tooltip-wrapper {
+    @apply z-50 !important;
+  }
+  
+  .recharts-default-tooltip {
+    @apply bg-white shadow-xl border border-gray-300 rounded-lg p-3 !important;
+    opacity: 0.98 !important;
+  }
+
+  .recharts-tooltip-label {
+    @apply font-semibold text-gray-900 mb-2 !important;
+  }
+
+  .recharts-tooltip-item {
+    @apply text-gray-700 !important;
+  }
+
+  /* Ensure Tremor cards have proper background */
+  .tremor-Card-root {
+    @apply bg-white !important;
+  }
+
+  /* Fix DateRangePicker dropdown */
+  .tremor-DateRangePicker-root [role="dialog"] {
+    @apply bg-white shadow-2xl border border-gray-200 rounded-lg z-50 !important;
+  }
+
+  /* Fix MultiSelect dropdown items */
+  .tremor-MultiSelectItem-root {
+    @apply bg-white hover:bg-gray-100 !important;
+  }
+
+  .tremor-MultiSelectItem-root[data-headlessui-state="active"] {
+    @apply bg-blue-50 !important;
+  }
+
+  .tremor-MultiSelectItem-root[aria-selected="true"] {
+    @apply bg-blue-100 !important;
+  }
+
+  /* Fix tab styling for better contrast */
+  .tremor-TabList-root {
+    @apply border-b border-gray-200 !important;
+  }
+
+  .tremor-Tab-root {
+    @apply text-gray-600 hover:text-gray-900 !important;
+  }
+
+  .tremor-Tab-root[data-headlessui-state="selected"] {
+    @apply text-blue-600 border-b-2 border-blue-600 !important;
+  }
+
+  /* Improve chart legend visibility */
+  .recharts-legend-item-text {
+    @apply text-gray-700 font-medium !important;
+  }
+
+  /* Fix select/combobox dropdown positioning */
+  [data-headlessui-portal] {
+    @apply z-50 !important;
+  }
+
+  /* Ensure proper stacking context for modals/dropdowns */
+  .tremor-Select-root [role="listbox"],
+  .tremor-MultiSelect-root [role="listbox"] {
+    @apply bg-white shadow-xl border border-gray-200 !important;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+}

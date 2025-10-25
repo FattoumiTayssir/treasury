@@ -7,6 +7,7 @@ export default {
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
     './index.html',
+    './node_modules/@tremor/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
   	container: {

@@ -6,6 +6,11 @@ import type {
   User,
   Company,
   TreasuryBalance,
+  TreasuryForecast,
+  CategoryBreakdown,
+  CashFlowAnalysis,
+  TreasuryMetrics,
+  AnalyticsFilters,
 } from '@/types'
 
 const api = axios.create({
@@ -78,8 +83,8 @@ export const odooApi = {
 // Treasury
 export const treasuryApi = {
   getBalance: (companyId: string) => api.get<TreasuryBalance>(`/treasury/balance/${companyId}`),
-  updateBalance: (companyId: string, amount: number, referenceDate: string) =>
-    api.post<TreasuryBalance>('/treasury/balance', { companyId, amount, referenceDate }),
+  updateBalance: (companyId: string, amount: number, referenceDate: string, notes?: string, sources?: Array<{sourceName: string, amount: number, sourceDate: string, notes?: string}>) =>
+    api.post<TreasuryBalance>('/treasury/balance', { companyId, amount, referenceDate, notes, sources: sources || [] }),
 }
 
 // Users
@@ -104,6 +109,18 @@ export const authApi = {
     api.post<{ token: string; user: User }>('/auth/login', { email, password }),
   logout: () => api.post('/auth/logout'),
   refreshToken: () => api.post<{ token: string }>('/auth/refresh'),
+}
+
+// Analytics
+export const analyticsApi = {
+  getForecast: (filters?: AnalyticsFilters) =>
+    api.get<TreasuryForecast[]>('/analytics/forecast', { params: filters }),
+  getCategoryBreakdown: (filters?: AnalyticsFilters) =>
+    api.get<CategoryBreakdown[]>('/analytics/category-breakdown', { params: filters }),
+  getCashFlowAnalysis: (filters?: AnalyticsFilters) =>
+    api.get<CashFlowAnalysis[]>('/analytics/cash-flow', { params: filters }),
+  getMetrics: (companyId: string) =>
+    api.get<TreasuryMetrics>(`/analytics/metrics/${companyId}`),
 }
 
 export default api

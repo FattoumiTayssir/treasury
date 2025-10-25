@@ -196,11 +196,31 @@ class ExceptionUpdateState(BaseModel):
     ids: List[str]
     state: str
 
+# Treasury Balance Source schemas
+class TreasuryBalanceSourceCreate(BaseModel):
+    sourceName: str
+    amount: float
+    sourceDate: str
+    notes: Optional[str] = None
+
+class TreasuryBalanceSourceResponse(BaseModel):
+    sourceId: int
+    sourceName: str
+    amount: float
+    sourceDate: str
+    notes: Optional[str] = None
+    createdAt: str
+
+    class Config:
+        from_attributes = True
+
 # Treasury Balance schemas
 class TreasuryBalanceUpdate(BaseModel):
     companyId: str
     amount: float
     referenceDate: str
+    notes: Optional[str] = None
+    sources: Optional[List[TreasuryBalanceSourceCreate]] = []
 
 class TreasuryBalanceResponse(BaseModel):
     companyId: str
@@ -208,6 +228,11 @@ class TreasuryBalanceResponse(BaseModel):
     referenceDate: str
     updatedBy: str
     updatedAt: str
+    notes: Optional[str] = None
+    sources: List[TreasuryBalanceSourceResponse] = []
+
+    class Config:
+        from_attributes = True
 
 # Auth schemas
 class LoginRequest(BaseModel):

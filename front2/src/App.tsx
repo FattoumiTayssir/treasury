@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { Layout } from '@/components/layout/Layout'
 import { Dashboard } from '@/pages/Dashboard'
+import AnalyticsRecharts from '@/pages/AnalyticsRecharts'
 import { Movements } from '@/pages/Movements'
 import { ManualEntries } from '@/pages/ManualEntries'
 import { Exceptions } from '@/pages/Exceptions'
@@ -31,6 +32,7 @@ function App() {
               <Layout>
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
+                  <Route path="/analytics" element={<AnalyticsRecharts />} />
                   <Route path="/movements" element={<Movements />} />
                   <Route path="/manual-entries" element={<ManualEntries />} />
                   <Route path="/exceptions" element={<Exceptions />} />

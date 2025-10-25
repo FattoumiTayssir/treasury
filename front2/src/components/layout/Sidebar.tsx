@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
+  BarChart3,
   TrendingUp,
   Edit3,
   AlertTriangle,
@@ -10,6 +11,7 @@ import { cn } from '@/utils/cn'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Analyse', href: '/analytics', icon: BarChart3 },
   { name: 'Mouvements', href: '/movements', icon: TrendingUp },
   { name: 'Entrées manuelles', href: '/manual-entries', icon: Edit3 },
   { name: 'Exceptions', href: '/exceptions', icon: AlertTriangle },
