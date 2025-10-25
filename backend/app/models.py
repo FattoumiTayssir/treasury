@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Numeric, Date, Text, ForeignKey, TIMESTAMP, Index, CheckConstraint, UniqueConstraint, JSON
+from sqlalchemy import Column, Integer, String, Numeric, Date, Text, ForeignKey, TIMESTAMP, Index, CheckConstraint, UniqueConstraint, JSON, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -70,6 +70,7 @@ class Movement(Base):
     archived_by = Column(Integer, ForeignKey("User.user_id"), nullable=True)
     archive_reason = Column(Text, nullable=True)
     archive_version = Column(Integer, nullable=False, server_default="1")
+    exclude_from_analytics = Column(Boolean, nullable=False, server_default="false")
     
     company = relationship("Company", back_populates="movements")
     manual_entry = relationship("ManualEntry", back_populates="movements")
@@ -116,6 +117,7 @@ class Exception(Base):
     reference_status = Column(String(50), nullable=True)
     odoo_link = Column(String(512), nullable=True)
     status = Column(String(20), nullable=False)
+    exclude_from_analytics = Column(Boolean, nullable=False, server_default="false")
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     
     company = relationship("Company", back_populates="exceptions")

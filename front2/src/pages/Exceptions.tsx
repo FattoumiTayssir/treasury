@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { RefreshCw, Filter } from 'lucide-react'
+import { RefreshCw, Clock, Filter } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { useDataStore } from '@/store/dataStore'
@@ -46,11 +46,24 @@ export function Exceptions() {
     }
   }
 
+  const formatLastRefresh = (dateStr: string) => {
+    if (!dateStr) return 'Jamais'
+    const date = new Date(dateStr)
+    return date.toLocaleString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
+
   // Filter by selected company first - show nothing if no company selected
   const companyFilteredExceptions = selectedCompanies.length > 0
     ? exceptions.filter(e => selectedCompanies.includes(e.companyId))
     : []
   
+  // Apply additional filters from the filter panel
   const filteredExceptions = applyExceptionFilters(companyFilteredExceptions, filters)
 
   return (
@@ -77,6 +90,23 @@ export function Exceptions() {
         </div>
       </div>
 
+      {/* ETL Timestamp Display */}
+      {exceptionsLastRefresh && (
+        <Card className="p-4 bg-blue-50 border-blue-200">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-sm text-blue-900">
+              <Clock className="w-4 h-4" />
+              <span className="font-semibold">Dernière synchronisation Odoo:</span>
+              <span>{formatLastRefresh(exceptionsLastRefresh)}</span>
+            </div>
+            <p className="text-xs text-blue-700">
+              Note: Les corrections Odoo nécessitent une nouvelle synchronisation pour être prises en compte.
+            </p>
+          </div>
+        </Card>
+      )}
+
+      {/* Filter Panel */}
       {showFilters && (
         <Card className="p-6">
           <ExceptionsFilters filters={filters} onFiltersChange={setFilters} />

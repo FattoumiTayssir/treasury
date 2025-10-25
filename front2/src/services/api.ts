@@ -36,6 +36,9 @@ export const movementsApi = {
   deactivate: (ids: string[], reason: string) =>
     api.post('/movements/deactivate', { ids, reason }),
   activate: (ids: string[]) => api.post('/movements/activate', { ids }),
+  excludeFromAnalytics: (ids: string[], exclude: boolean) =>
+    api.post('/movements/exclude-from-analytics', { ids, exclude }),
+  includeInAnalytics: (ids: string[]) => api.post('/movements/include-in-analytics', { ids }),
   refresh: () => api.post('/movements/refresh'),
   getLastRefresh: () => api.get<{ lastRefresh: string }>('/movements/last-refresh'),
 }
@@ -56,8 +59,9 @@ export const manualEntriesApi = {
 export const exceptionsApi = {
   getAll: () => api.get<Exception[]>('/exceptions'),
   getById: (id: string) => api.get<Exception>(`/exceptions/${id}`),
-  updateState: (ids: string[], state: 'Actif' | 'Désactivé') =>
-    api.post('/exceptions/update-state', { ids, state }),
+  updateState: (ids: string[], state: string) => api.post('/exceptions/update-state', { ids, state }),
+  excludeFromAnalytics: (ids: string[], exclude: boolean) => 
+    api.post('/exceptions/exclude-from-analytics', { ids, exclude }),
   refresh: () => api.post('/exceptions/refresh'),
   getLastRefresh: () => api.get<{ lastRefresh: string }>('/exceptions/last-refresh'),
 }

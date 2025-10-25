@@ -25,6 +25,7 @@ interface DataState {
   refreshMovements: () => Promise<void>
   refreshExceptions: () => Promise<void>
   setSelectedCompanies: (companies: string[]) => void
+  updateMovementsOptimistic: (ids: string[], exclude: boolean) => void
   clearError: () => void
 }
 
@@ -146,5 +147,14 @@ export const useDataStore = create<DataState>((set) => ({
   },
 
   setSelectedCompanies: (companies) => set({ selectedCompanies: companies }),
+  
+  updateMovementsOptimistic: (ids, exclude) => set((state) => ({
+    movements: state.movements.map((movement) =>
+      ids.includes(movement.id)
+        ? { ...movement, excludeFromAnalytics: exclude }
+        : movement
+    ),
+  })),
+  
   clearError: () => set({ error: null }),
 }))

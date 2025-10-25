@@ -87,6 +87,7 @@ class MovementResponse(BaseModel):
     deactivatedBy: Optional[str] = None
     deactivatedAt: Optional[str] = None
     deactivationReason: Optional[str] = None
+    excludeFromAnalytics: bool = False
 
     class Config:
         from_attributes = True
@@ -97,6 +98,10 @@ class MovementDeactivate(BaseModel):
 
 class MovementActivate(BaseModel):
     ids: List[str]
+
+class MovementExcludeFromAnalytics(BaseModel):
+    ids: List[str]
+    exclude: bool  # True to exclude, False to include
 
 # Manual Entry schemas
 class ManualEntryBase(BaseModel):
@@ -188,6 +193,7 @@ class ExceptionResponse(BaseModel):
     referenceState: Optional[str] = None
     odooLink: Optional[str] = None
     state: str
+    excludeFromAnalytics: bool = False
 
     class Config:
         from_attributes = True
@@ -195,6 +201,10 @@ class ExceptionResponse(BaseModel):
 class ExceptionUpdateState(BaseModel):
     ids: List[str]
     state: str
+
+class ExceptionExcludeFromAnalytics(BaseModel):
+    ids: List[str]
+    exclude: bool  # True to exclude, False to include
 
 # Treasury Balance Source schemas
 class TreasuryBalanceSourceCreate(BaseModel):

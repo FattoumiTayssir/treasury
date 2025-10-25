@@ -10,7 +10,9 @@ interface ExceptionsFiltersProps {
   onFiltersChange: (filters: ExceptionFilters) => void
 }
 
-const criticalities: Criticality[] = ['Critique', 'Majeure', 'Warning']
+const categories = ['Toutes', 'RH', 'Achat', 'Vente', 'Fiscalité', 'Trésorerie', 'Autre']
+const criticalities = ['Toutes', 'Critique', 'Majeure', 'Warning']
+const types = ['Tous', 'Salaire', 'Charges sociales', 'Achat Local', 'Achat Importation', 'Vente Local', 'Vente Export', 'TVA', 'IS', 'Autre']
 const states: ExceptionState[] = ['Actif', 'Désactivé']
 
 export function ExceptionsFilters({ filters, onFiltersChange }: ExceptionsFiltersProps) {
@@ -46,6 +48,69 @@ export function ExceptionsFilters({ filters, onFiltersChange }: ExceptionsFilter
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="space-y-2">
+          <Label>Catégorie</Label>
+          <Select
+            value={filters.category?.[0] || 'Toutes'}
+            onValueChange={(value) =>
+              onFiltersChange({ ...filters, category: value === 'Toutes' ? undefined : [value as any] })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((cat) => (
+                <SelectItem key={cat} value={cat}>
+                  {cat}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Type</Label>
+          <Select
+            value={filters.type?.[0] || 'Tous'}
+            onValueChange={(value) =>
+              onFiltersChange({ ...filters, type: value === 'Tous' ? undefined : [value] })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {types.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Criticité</Label>
+          <Select
+            value={filters.criticality?.[0] || 'Toutes'}
+            onValueChange={(value) =>
+              onFiltersChange({ ...filters, criticality: value === 'Toutes' ? undefined : [value as any] })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {criticalities.map((crit) => (
+                <SelectItem key={crit} value={crit}>
+                  {crit}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
           <Label>Recherche description</Label>
           <Input
             placeholder="Mots-clés..."
@@ -77,6 +142,21 @@ export function ExceptionsFilters({ filters, onFiltersChange }: ExceptionsFilter
               onFiltersChange({
                 ...filters,
                 amountMin: e.target.value ? parseFloat(e.target.value) : undefined,
+              })
+            }
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Montant max</Label>
+          <Input
+            type="number"
+            placeholder="0"
+            value={filters.amountMax || ''}
+            onChange={(e) =>
+              onFiltersChange({
+                ...filters,
+                amountMax: e.target.value ? parseFloat(e.target.value) : undefined,
               })
             }
           />

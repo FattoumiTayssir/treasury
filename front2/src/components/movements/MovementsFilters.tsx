@@ -1,4 +1,4 @@
-import { MovementFilters, Category, Sign, Source, Status } from '@/types'
+import { MovementFilters, Category, Source } from '@/types'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -10,10 +10,9 @@ interface MovementsFiltersProps {
   onFiltersChange: (filters: MovementFilters) => void
 }
 
-const categories: Category[] = ['RH', 'Achat', 'Vente', 'Compta', 'Autre']
-const signs: Sign[] = ['Entrée', 'Sortie']
-const sources: Source[] = ['Odoo', 'Entrée manuelle']
-const statuses: Status[] = ['Actif', 'Désactivé']
+const categories = ['Toutes', 'RH', 'Achat', 'Vente', 'Compta', 'Autre']
+const types = ['Tous', 'Salaire', 'Charges sociales', 'Achat Local', 'Achat Importation', 'Vente Local', 'Vente Export', 'TVA', 'IS', 'Autre']
+const sources = ['Toutes', 'Odoo', 'Entrée manuelle']
 
 export function MovementsFilters({ filters, onFiltersChange }: MovementsFiltersProps) {
   const handleReset = () => {
@@ -47,6 +46,69 @@ export function MovementsFilters({ filters, onFiltersChange }: MovementsFiltersP
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="space-y-2">
+          <Label>Catégorie</Label>
+          <Select
+            value={filters.category?.[0] || 'Toutes'}
+            onValueChange={(value) =>
+              onFiltersChange({ ...filters, category: value === 'Toutes' ? undefined : [value as Category] })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((cat) => (
+                <SelectItem key={cat} value={cat}>
+                  {cat}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Type</Label>
+          <Select
+            value={filters.type?.[0] || 'Tous'}
+            onValueChange={(value) =>
+              onFiltersChange({ ...filters, type: value === 'Tous' ? undefined : [value] })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {types.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Source</Label>
+          <Select
+            value={filters.source?.[0] || 'Toutes'}
+            onValueChange={(value) =>
+              onFiltersChange({ ...filters, source: value === 'Toutes' ? undefined : [value as Source] })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {sources.map((source) => (
+                <SelectItem key={source} value={source}>
+                  {source}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="space-y-2">
           <Label>Date min</Label>
           <Input

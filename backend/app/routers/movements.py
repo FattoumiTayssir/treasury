@@ -34,18 +34,21 @@ def get_movements(db: Session = Depends(get_db)):
             createdAt=m.created_at.isoformat() if m.created_at else None,
             updatedAt=m.updated_at.isoformat() if m.updated_at else None,
             deactivatedAt=m.disabled_at.isoformat() if m.disabled_at else None,
-            deactivationReason=m.disable_reason
+            deactivationReason=m.disable_reason,
+            excludeFromAnalytics=m.exclude_from_analytics
         )
         for m in movements
     ]
 
 @router.get("/last-refresh", response_model=schemas.LastRefreshResponse)
 def get_last_refresh(db: Session = Depends(get_db)):
-    # Get the latest created_at timestamp
-    latest = db.query(models.Movement).order_by(models.Movement.created_at.desc()).first()
+    # Get the latest created_at timestamp from Odoo source only (not manual entries)
+    latest = db.query(models.Movement).filter(
+        models.Movement.source == "Odoo"
+    ).order_by(models.Movement.created_at.desc()).first()
     if latest:
         return {"lastRefresh": latest.created_at.isoformat()}
-    return {"lastRefresh": datetime.utcnow().isoformat()}
+    return {"lastRefresh": None}
 
 @router.post("/deactivate")
 def deactivate_movements(data: schemas.MovementDeactivate, db: Session = Depends(get_db)):
@@ -70,6 +73,18 @@ def activate_movements(data: schemas.MovementActivate, db: Session = Depends(get
     
     db.commit()
     return {"message": "Movements activated successfully"}
+
+@router.post("/exclude-from-analytics")
+def exclude_from_analytics(data: schemas.MovementExcludeFromAnalytics, db: Session = Depends(get_db)):
+    """Exclude or include movements from analytics calculations"""
+    for movement_id in data.ids:
+        movement = db.query(models.Movement).filter(models.Movement.movement_id == int(movement_id)).first()
+        if movement:
+            movement.exclude_from_analytics = data.exclude
+    
+    db.commit()
+    action = "excluded from" if data.exclude else "included in"
+    return {"message": f"{len(data.ids)} movements {action} analytics successfully"}
 
 @router.post("/refresh")
 def refresh_movements():
@@ -103,5 +118,6 @@ def get_movement(id: str, db: Session = Depends(get_db)):
         createdAt=movement.created_at.isoformat() if movement.created_at else None,
         updatedAt=movement.updated_at.isoformat() if movement.updated_at else None,
         deactivatedAt=movement.disabled_at.isoformat() if movement.disabled_at else None,
-        deactivationReason=movement.disable_reason
+        deactivationReason=movement.disable_reason,
+        excludeFromAnalytics=movement.exclude_from_analytics
     )

@@ -28,10 +28,11 @@ def get_metrics(company_id: str, db: Session = Depends(get_db)):
     current_balance = float(treasury_baseline.amount)
     reference_date = treasury_baseline.reference_date
     
-    # Get all active movements for this company
+    # Get all active movements for this company (excluding those marked to exclude from analytics)
     movements = db.query(models.Movement).filter(
         models.Movement.company_id == company_id,
-        models.Movement.status == "Actif"
+        models.Movement.status == "Actif",
+        models.Movement.exclude_from_analytics == False
     ).all()
     
     # Calculate date ranges

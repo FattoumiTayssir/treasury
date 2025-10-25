@@ -48,6 +48,7 @@ export interface FinancialMovement {
   deactivatedBy?: string
   deactivatedAt?: string
   deactivationReason?: string
+  excludeFromAnalytics: boolean
 }
 
 export interface ManualEntry {
@@ -88,6 +89,7 @@ export interface Exception {
   referenceState?: string
   odooLink?: string
   state: ExceptionState
+  excludeFromAnalytics: boolean
 }
 
 export interface User {

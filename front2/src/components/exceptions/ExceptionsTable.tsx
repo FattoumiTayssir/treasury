@@ -45,13 +45,12 @@ export function ExceptionsTable({ exceptions, isLoading }: ExceptionsTableProps)
               <th className="p-4 text-left font-semibold">Description</th>
               <th className="p-4 text-right font-semibold">Montant</th>
               <th className="p-4 text-left font-semibold">Référence</th>
-              <th className="p-4 text-center font-semibold">État</th>
             </tr>
           </thead>
           <tbody>
             {exceptions.length === 0 ? (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                <td colSpan={6} className="p-8 text-center text-muted-foreground">
                   Aucune exception trouvée
                 </td>
               </tr>
@@ -83,13 +82,6 @@ export function ExceptionsTable({ exceptions, isLoading }: ExceptionsTableProps)
                           </a>
                         )}
                       </div>
-                    )}
-                  </td>
-                  <td className="p-4 text-center">
-                    {exception.state === 'Actif' ? (
-                      <Eye className="w-4 h-4 mx-auto text-primary" />
-                    ) : (
-                      <EyeOff className="w-4 h-4 mx-auto text-muted-foreground" />
                     )}
                   </td>
                 </tr>
