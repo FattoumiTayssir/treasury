@@ -3,12 +3,14 @@ import { Plus, List, Grid } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useDataStore } from '@/store/dataStore'
+import { useAuthStore } from '@/store/authStore'
 import { ManualEntriesTable } from '@/components/manual-entries/ManualEntriesTable'
 import { ManualEntryForm } from '@/components/manual-entries/ManualEntryForm'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 export function ManualEntries() {
   const { manualEntries, selectedCompanies, fetchManualEntries, isLoading } = useDataStore()
+  const { user } = useAuthStore()
   const [showCreateDialog, setShowCreateDialog] = useState(false)
 
   useEffect(() => {
@@ -16,9 +18,17 @@ export function ManualEntries() {
   }, [])
 
   // Filter by selected company - show nothing if no company selected
-  const filteredManualEntries = selectedCompanies.length > 0
+  let filteredManualEntries = selectedCompanies.length > 0
     ? manualEntries.filter(entry => selectedCompanies.includes(entry.companyId))
     : []
+
+  // Filter by own data only if permission is set
+  const entryPerm = user?.permissions.find(p => p.tabName === 'manual-entries')
+  if (entryPerm?.ownDataOnly && user) {
+    filteredManualEntries = filteredManualEntries.filter(entry => 
+      entry.createdBy === user.name
+    )
+  }
 
   return (
     <div className="space-y-6">

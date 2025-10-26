@@ -30,6 +30,7 @@ class UserTabPermissionResponse(BaseModel):
     tabLabel: str
     canView: bool
     canModify: bool
+    ownDataOnly: bool = False
 
     class Config:
         from_attributes = True
@@ -38,6 +39,7 @@ class UserTabPermissionUpdate(BaseModel):
     tabName: str
     canView: bool
     canModify: bool
+    ownDataOnly: bool = False
 
 # User schemas
 class UserBase(BaseModel):
@@ -72,6 +74,10 @@ class UserWithPermissionsUpdate(BaseModel):
     password: Optional[str] = None
     companies: Optional[List[int]] = None
     permissions: Optional[List[UserTabPermissionUpdate]] = None
+
+class PasswordChangeRequest(BaseModel):
+    currentPassword: str
+    newPassword: str
 
 # Company schemas
 class CompanyBase(BaseModel):

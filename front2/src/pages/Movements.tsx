@@ -3,6 +3,7 @@ import { RefreshCw, Clock, Filter } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { useDataStore } from '@/store/dataStore'
+import { useAuthStore } from '@/store/authStore'
 import { MovementFilters } from '@/types'
 import { applyMovementFilters } from '@/utils/filters'
 import { MovementsTableAdvanced } from '@/components/movements/MovementsTableAdvanced'
@@ -21,6 +22,7 @@ export function Movements() {
     updateMovementsOptimistic,
     isLoading,
   } = useDataStore()
+  const { user } = useAuthStore()
   
   const [filters, setFilters] = useState<MovementFilters>({
     logic: 'ET',
@@ -87,9 +89,17 @@ export function Movements() {
   }
 
   // Filter by selected company first - show nothing if no company selected
-  const companyFilteredMovements = selectedCompanies.length > 0
+  let companyFilteredMovements = selectedCompanies.length > 0
     ? movements.filter(m => selectedCompanies.includes(m.companyId))
     : []
+  
+  // Filter by own data only if permission is set
+  const movementPerm = user?.permissions.find(p => p.tabName === 'movements')
+  if (movementPerm?.ownDataOnly && user) {
+    companyFilteredMovements = companyFilteredMovements.filter(m => 
+      m.createdBy === user.name
+    )
+  }
   
   // Apply additional filters from the filter panel
   const filteredMovements = applyMovementFilters(companyFilteredMovements, filters)

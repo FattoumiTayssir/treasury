@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
 from app import models, schemas
+from app.auth_utils import get_current_user
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import json
@@ -43,7 +44,7 @@ def get_manual_entries(db: Session = Depends(get_db)):
                 note=movement.note,
                 visibility=movement.visibility,
                 status=movement.status,
-                createdBy=movement.creator.display_name if movement.creator else "",
+                createdBy=movement.creator.display_name if movement.creator else "Système",
                 createdAt=movement.created_at.isoformat() if movement.created_at else "",
                 updatedBy=None,
                 updatedAt=movement.updated_at.isoformat() if movement.updated_at else None,
@@ -94,7 +95,11 @@ def get_manual_entry(id: str, db: Session = Depends(get_db)):
     )
 
 @router.post("", response_model=schemas.ManualEntryResponse)
-def create_manual_entry(entry: schemas.ManualEntryCreate, db: Session = Depends(get_db)):
+def create_manual_entry(
+    entry: schemas.ManualEntryCreate, 
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
     # Parse dates
     start_date = datetime.strptime(entry.start_date, "%Y-%m-%d").date()
     end_date = datetime.strptime(entry.end_date, "%Y-%m-%d").date() if entry.end_date else start_date
@@ -106,6 +111,7 @@ def create_manual_entry(entry: schemas.ManualEntryCreate, db: Session = Depends(
         start_date=start_date,
         end_date=end_date if entry.frequency not in ["Une seule fois", "Dates personnalisées"] else None,
         recurrence={"custom_dates": entry.custom_dates} if entry.custom_dates else None,
+        created_by=current_user.user_id,
     )
     db.add(db_entry)
     db.flush()
@@ -142,7 +148,7 @@ def create_manual_entry(entry: schemas.ManualEntryCreate, db: Session = Depends(
                 note=entry.note,
                 visibility=entry.visibility,
                 status=entry.status,
-                created_by=1  # TODO: Get from auth
+                created_by=current_user.user_id
             )
             db.add(movement)
             movements.append(movement)
@@ -172,7 +178,7 @@ def create_manual_entry(entry: schemas.ManualEntryCreate, db: Session = Depends(
                 note=entry.note,
                 visibility=entry.visibility,
                 status=entry.status,
-                created_by=1  # TODO: Get from auth
+                created_by=current_user.user_id
             )
             db.add(movement)
             movements.append(movement)
@@ -218,7 +224,7 @@ def create_manual_entry(entry: schemas.ManualEntryCreate, db: Session = Depends(
         note=first_movement.note,
         visibility=first_movement.visibility,
         status=first_movement.status,
-        createdBy=first_movement.creator.display_name if first_movement.creator else "",
+        createdBy=first_movement.creator.display_name if first_movement.creator else "Système",
         createdAt=first_movement.created_at.isoformat(),
         updatedBy=None,
         updatedAt=None,
@@ -327,7 +333,7 @@ def get_manual_entry_movements(id: str, db: Session = Depends(get_db)):
             note=m.note,
             visibility=m.visibility,
             status=m.status,
-            createdBy=m.creator.display_name if m.creator else None,
+            createdBy=m.creator.display_name if m.creator else "Système",
             createdAt=m.created_at.isoformat() if m.created_at else None,
             updatedAt=m.updated_at.isoformat() if m.updated_at else None,
         )

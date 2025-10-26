@@ -5,7 +5,9 @@ from app.database import get_db
 from app import models, schemas
 from app.auth_utils import (
     get_current_admin_user,
-    get_password_hash
+    get_current_user,
+    get_password_hash,
+    verify_password
 )
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -19,7 +21,8 @@ def build_user_response(user: models.User) -> schemas.UserResponse:
             tabName=perm.tab.tab_name,
             tabLabel=perm.tab.tab_label,
             canView=perm.can_view,
-            canModify=perm.can_modify
+            canModify=perm.can_modify,
+            ownDataOnly=perm.own_data_only
         ))
     
     return schemas.UserResponse(
@@ -113,6 +116,20 @@ def update_user(
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
     
+    # Protect System and Admin users (user_id 1 and 2) from modification
+    if int(id) in [1, 2]:
+        # Only allow password changes for these users
+        if user_update.password is not None:
+            db_user.password_hash = get_password_hash(user_update.password)
+            db.commit()
+            db.refresh(db_user)
+            return build_user_response(db_user)
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="System and Admin users cannot be modified. Only password can be changed."
+            )
+    
     # Update basic info
     if user_update.display_name is not None:
         db_user.display_name = user_update.display_name
@@ -167,7 +184,8 @@ def update_user(
                     user_id=int(id),
                     tab_id=tab.tab_id,
                     can_view=perm.canView,
-                    can_modify=perm.canModify
+                    can_modify=perm.canModify,
+                    own_data_only=perm.ownDataOnly
                 )
                 db.add(user_perm)
     
@@ -183,6 +201,13 @@ def delete_user(
     db: Session = Depends(get_db)
 ):
     """Delete a user (Admin only)"""
+    # Protect System and Admin users (user_id 1 and 2) from deletion
+    if int(id) in [1, 2]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="System and Admin users cannot be deleted"
+        )
+    
     if str(current_user.user_id) == id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -196,3 +221,36 @@ def delete_user(
     db.delete(db_user)
     db.commit()
     return {"message": "User deleted successfully"}
+
+@router.post("/change-password")
+def change_password(
+    password_data: schemas.PasswordChangeRequest,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Change password for current user (any authenticated user can access)"""
+    # Verify current password
+    if not verify_password(password_data.currentPassword, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect"
+        )
+    
+    # Validate new password
+    if len(password_data.newPassword) < 4:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be at least 4 characters long"
+        )
+    
+    if password_data.currentPassword == password_data.newPassword:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be different from current password"
+        )
+    
+    # Update password
+    current_user.password_hash = get_password_hash(password_data.newPassword)
+    db.commit()
+    
+    return {"message": "Password changed successfully"}

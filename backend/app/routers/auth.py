@@ -42,7 +42,8 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
             tabName=perm.tab.tab_name,
             tabLabel=perm.tab.tab_label,
             canView=perm.can_view,
-            canModify=perm.can_modify
+            canModify=perm.can_modify,
+            ownDataOnly=perm.own_data_only
         ))
     
     return schemas.LoginResponse(

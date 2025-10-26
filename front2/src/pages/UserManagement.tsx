@@ -181,28 +181,33 @@ export function UserManagement() {
                       <span className="text-sm text-gray-500">Toutes</span>
                     ) : (
                       <div className="text-sm text-gray-900">
-                        {user.permissions.length} onglet(s)
+                        {user.permissions.filter(p => p.canView).length} onglet(s)
                       </div>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditUser(user)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteUser(user.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    {/* System and Admin users (ID 1 and 2) cannot be modified or deleted */}
+                    {user.id === '1' || user.id === '2' ? (
+                      <span className="text-xs text-gray-400 italic">Utilisateur protégé</span>
+                    ) : (
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditUser(user)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteUser(user.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}

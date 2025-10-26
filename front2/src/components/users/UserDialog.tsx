@@ -37,6 +37,7 @@ interface PermissionState {
   tabLabel: string
   canView: boolean
   canModify: boolean
+  ownDataOnly: boolean
 }
 
 export function UserDialog({
@@ -74,6 +75,7 @@ export function UserDialog({
             tabLabel: tab.label,
             canView: existingPerm?.canView || false,
             canModify: existingPerm?.canModify || false,
+            ownDataOnly: existingPerm?.ownDataOnly || false,
           }
         })
         setPermissions(userPerms)
@@ -92,6 +94,7 @@ export function UserDialog({
             tabLabel: tab.label,
             canView: false,
             canModify: false,
+            ownDataOnly: false,
           }))
         )
       }
@@ -106,7 +109,7 @@ export function UserDialog({
     )
   }
 
-  const handlePermissionChange = (tabName: string, field: 'canView' | 'canModify', value: boolean) => {
+  const handlePermissionChange = (tabName: string, field: 'canView' | 'canModify' | 'ownDataOnly', value: boolean) => {
     setPermissions(prev =>
       prev.map(p =>
         p.tabName === tabName
@@ -115,8 +118,8 @@ export function UserDialog({
               [field]: value,
               // If setting canModify to true, also set canView to true
               ...(field === 'canModify' && value ? { canView: true } : {}),
-              // If setting canView to false, also set canModify to false
-              ...(field === 'canView' && !value ? { canModify: false } : {}),
+              // If setting canView to false, also set canModify and ownDataOnly to false
+              ...(field === 'canView' && !value ? { canModify: false, ownDataOnly: false } : {}),
             }
           : p
       )
@@ -166,6 +169,7 @@ export function UserDialog({
             tabName: p.tabName,
             canView: p.canView,
             canModify: p.canModify,
+            ownDataOnly: p.ownDataOnly,
           })),
         }
 
@@ -197,6 +201,7 @@ export function UserDialog({
             tabName: p.tabName,
             canView: p.canView,
             canModify: p.canModify,
+            ownDataOnly: p.ownDataOnly,
           })),
         })
 
@@ -319,42 +324,64 @@ export function UserDialog({
               </p>
               <div className="space-y-3">
                 {permissions.map((perm) => (
-                  <div key={perm.tabName} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="font-medium">{perm.tabLabel}</div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`view-${perm.tabName}`}
-                          checked={perm.canView}
-                          onCheckedChange={(checked) =>
-                            handlePermissionChange(perm.tabName, 'canView', checked as boolean)
-                          }
-                        />
-                        <label
-                          htmlFor={`view-${perm.tabName}`}
-                          className="text-sm flex items-center gap-1 cursor-pointer"
-                        >
-                          <Eye className="w-4 h-4" />
-                          Voir
-                        </label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`modify-${perm.tabName}`}
-                          checked={perm.canModify}
-                          onCheckedChange={(checked) =>
-                            handlePermissionChange(perm.tabName, 'canModify', checked as boolean)
-                          }
-                        />
-                        <label
-                          htmlFor={`modify-${perm.tabName}`}
-                          className="text-sm flex items-center gap-1 cursor-pointer"
-                        >
-                          <Edit className="w-4 h-4" />
-                          Modifier
-                        </label>
+                  <div key={perm.tabName} className="border rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="font-medium">{perm.tabLabel}</div>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`view-${perm.tabName}`}
+                            checked={perm.canView}
+                            onCheckedChange={(checked) =>
+                              handlePermissionChange(perm.tabName, 'canView', checked as boolean)
+                            }
+                          />
+                          <label
+                            htmlFor={`view-${perm.tabName}`}
+                            className="text-sm flex items-center gap-1 cursor-pointer"
+                          >
+                            <Eye className="w-4 h-4" />
+                            Voir
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`modify-${perm.tabName}`}
+                            checked={perm.canModify}
+                            onCheckedChange={(checked) =>
+                              handlePermissionChange(perm.tabName, 'canModify', checked as boolean)
+                            }
+                          />
+                          <label
+                            htmlFor={`modify-${perm.tabName}`}
+                            className="text-sm flex items-center gap-1 cursor-pointer"
+                          >
+                            <Edit className="w-4 h-4" />
+                            Modifier
+                          </label>
+                        </div>
                       </div>
                     </div>
+                    {/* Show "Own Data Only" option for movements and manual-entries */}
+                    {(perm.tabName === 'movements' || perm.tabName === 'manual-entries') && perm.canView && (
+                      <div className="ml-4 pt-2 border-t">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`own-${perm.tabName}`}
+                            checked={perm.ownDataOnly}
+                            onCheckedChange={(checked) =>
+                              handlePermissionChange(perm.tabName, 'ownDataOnly', checked as boolean)
+                            }
+                          />
+                          <label
+                            htmlFor={`own-${perm.tabName}`}
+                            className="text-sm text-gray-600 cursor-pointer italic"
+                          >
+                            Uniquement ses propres données
+                          </label>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

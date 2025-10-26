@@ -6,6 +6,7 @@ import { ManualEntries } from '@/pages/ManualEntries'
 import { Exceptions } from '@/pages/Exceptions'
 import { TreasurySettings } from '@/pages/TreasurySettings'
 import { UserManagement } from '@/pages/UserManagement'
+import { PasswordChange } from '@/pages/Settings/PasswordChange'
 import { Login } from '@/pages/Login'
 import { useAuthStore } from '@/store/authStore'
 import { Toaster } from '@/components/ui/toaster'
@@ -48,6 +49,14 @@ function App() {
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route 
+          path="/settings/password" 
+          element={
+            <ProtectedRoute>
+              <PasswordChange />
+            </ProtectedRoute>
+          } 
+        />
         <Route
           path="/*"
           element={

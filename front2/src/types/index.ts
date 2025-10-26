@@ -98,6 +98,7 @@ export interface TabPermission {
   tabLabel: string
   canView: boolean
   canModify: boolean
+  ownDataOnly?: boolean  // For movements and manual-entries: can only see/modify own data
 }
 
 export interface User {

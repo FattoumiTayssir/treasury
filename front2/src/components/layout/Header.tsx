@@ -1,4 +1,4 @@
-import { LogOut, User, Building2 } from 'lucide-react'
+import { LogOut, User, Building2, Settings } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { useDataStore } from '@/store/dataStore'
 import { Button } from '@/components/ui/button'
@@ -9,6 +9,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { NotificationDropdown } from './NotificationDropdown'
 import { useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
@@ -22,17 +30,22 @@ export function Header() {
     fetchCompanies()
   }, [])
 
-  // Initialize with first allowed company
+  // Filter companies based on user's allowed companies
+  // Admin users can see all companies
+  const allowedCompanies = user 
+    ? (user.role === 'Admin' ? companies : companies.filter(c => user.companies.includes(c.id)))
+    : companies
+
+  // Auto-select first company on login
   useEffect(() => {
-    if (user && companies.length > 0 && selectedCompanies.length === 0) {
-      const allowedCompanies = companies.filter(c => user.companies.includes(c.id))
-      if (allowedCompanies.length > 0) {
-        setSelectedCompanies([allowedCompanies[0].id])
-      }
+    if (user && companies.length > 0 && selectedCompanies.length === 0 && allowedCompanies.length > 0) {
+      setSelectedCompanies([allowedCompanies[0].id])
     }
-  }, [user, companies, selectedCompanies.length])
+  }, [user, companies, selectedCompanies.length, allowedCompanies, setSelectedCompanies])
 
   const handleLogout = () => {
+    // Clear selected companies on logout
+    setSelectedCompanies([])
     logout()
     navigate('/login')
   }
@@ -41,11 +54,6 @@ export function Header() {
     // Only one company can be selected at a time
     setSelectedCompanies([companyId])
   }
-
-  // Filter companies based on user's allowed companies
-  const allowedCompanies = user 
-    ? companies.filter(c => user.companies.includes(c.id))
-    : companies
 
   const selectedCompanyId = selectedCompanies[0] || ''
 
@@ -77,24 +85,34 @@ export function Header() {
         <div className="flex items-center gap-3">
           <NotificationDropdown />
           
-          <div className="flex items-center gap-3 pl-3 border-l border-gray-200">
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-              <p className="text-xs text-gray-500">{user?.role}</p>
-            </div>
-            <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
-              <User className="w-5 h-5" />
-            </div>
+          <div className="pl-3 border-l border-gray-200">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-3 hover:bg-gray-100">
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-gray-900">{user?.name}</p>
+                    <p className="text-xs text-gray-500">{user?.role}</p>
+                  </div>
+                  <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                    <User className="w-5 h-5" />
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/settings/password')}>
+                  <Settings className="w-4 h-4 mr-2" />
+                  Paramètres
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Déconnexion
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleLogout}
-            title="Déconnexion"
-          >
-            <LogOut className="w-5 h-5" />
-          </Button>
         </div>
       </div>
     </header>
