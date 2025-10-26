@@ -22,6 +22,16 @@ export function Header() {
     fetchCompanies()
   }, [])
 
+  // Initialize with first allowed company
+  useEffect(() => {
+    if (user && companies.length > 0 && selectedCompanies.length === 0) {
+      const allowedCompanies = companies.filter(c => user.companies.includes(c.id))
+      if (allowedCompanies.length > 0) {
+        setSelectedCompanies([allowedCompanies[0].id])
+      }
+    }
+  }, [user, companies, selectedCompanies.length])
+
   const handleLogout = () => {
     logout()
     navigate('/login')
@@ -31,6 +41,11 @@ export function Header() {
     // Only one company can be selected at a time
     setSelectedCompanies([companyId])
   }
+
+  // Filter companies based on user's allowed companies
+  const allowedCompanies = user 
+    ? companies.filter(c => user.companies.includes(c.id))
+    : companies
 
   const selectedCompanyId = selectedCompanies[0] || ''
 
@@ -49,7 +64,7 @@ export function Header() {
                 <SelectValue placeholder="Sélectionner une compagnie" />
               </SelectTrigger>
               <SelectContent>
-                {companies.map((company) => (
+                {allowedCompanies.map((company) => (
                   <SelectItem key={company.id} value={company.id}>
                     {company.name}
                   </SelectItem>

@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
-import { MOCK_CREDENTIALS } from '@/services/mockAuth'
 
 export function Login() {
   const [email, setEmail] = useState('')
@@ -35,9 +34,9 @@ export function Login() {
     }
   }
 
-  const fillCredentials = (type: 'admin' | 'user' | 'multi') => {
-    setEmail(MOCK_CREDENTIALS[type].email)
-    setPassword(MOCK_CREDENTIALS[type].password)
+  const fillCredentials = (email: string, password: string) => {
+    setEmail(email)
+    setPassword(password)
   }
 
   return (
@@ -46,34 +45,23 @@ export function Login() {
         <CardHeader className="space-y-1">
           <CardTitle className="text-3xl font-bold text-center">Tabtré App</CardTitle>
           <CardDescription className="text-center">
-            Gestion de Trésorerie Universal
+            Gestion de Trésorerie
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
-            <p className="text-sm font-semibold text-blue-900">🔐 Comptes de test disponibles :</p>
+            <p className="text-sm font-semibold text-blue-900">🔐 Compte administrateur :</p>
             <div className="space-y-1 text-xs text-blue-800">
               <button
                 type="button"
-                onClick={() => fillCredentials('admin')}
+                onClick={() => fillCredentials('admin@treasury.local', 'admin123')}
                 className="block w-full text-left hover:bg-blue-100 p-2 rounded transition-colors"
               >
-                <strong>Admin:</strong> admin@universal.com / admin123
+                <strong>Admin:</strong> admin@treasury.local / admin123
               </button>
-              <button
-                type="button"
-                onClick={() => fillCredentials('user')}
-                className="block w-full text-left hover:bg-blue-100 p-2 rounded transition-colors"
-              >
-                <strong>Gestionnaire:</strong> user@universal.com / user123
-              </button>
-              <button
-                type="button"
-                onClick={() => fillCredentials('multi')}
-                className="block w-full text-left hover:bg-blue-100 p-2 rounded transition-colors"
-              >
-                <strong>Multi-entreprises:</strong> multi@universal.com / multi123
-              </button>
+              <p className="text-xs text-blue-600 italic mt-2 px-2">
+                ⚠️ Changez ce mot de passe après la première connexion
+              </p>
             </div>
           </div>
 
@@ -82,10 +70,11 @@ export function Login() {
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
-                type="email"
-                placeholder="votre.email@universal.com"
+                type="text"
+                placeholder="admin@treasury.local"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 required
               />
             </div>

@@ -14,6 +14,31 @@ ReferenceTypeEnum = str
 ExceptionTypeEnum = str
 CriticalityType = str
 
+# Permission schemas
+class TabPermissionResponse(BaseModel):
+    id: int
+    name: str
+    label: str
+    description: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class UserTabPermissionResponse(BaseModel):
+    tabId: int
+    tabName: str
+    tabLabel: str
+    canView: bool
+    canModify: bool
+
+    class Config:
+        from_attributes = True
+
+class UserTabPermissionUpdate(BaseModel):
+    tabName: str
+    canView: bool
+    canModify: bool
+
 # User schemas
 class UserBase(BaseModel):
     display_name: str
@@ -21,20 +46,32 @@ class UserBase(BaseModel):
     role: str
 
 class UserCreate(UserBase):
-    pass
+    password: str
 
 class UserUpdate(BaseModel):
     display_name: Optional[str] = None
     email: Optional[EmailStr] = None
     role: Optional[str] = None
+    password: Optional[str] = None
 
-class UserResponse(UserBase):
+class UserResponse(BaseModel):
     id: str
     name: str
+    email: str  # Changed from EmailStr to allow .local domains
+    role: str
     companies: List[str] = []
+    permissions: List[UserTabPermissionResponse] = []
 
     class Config:
         from_attributes = True
+
+class UserWithPermissionsUpdate(BaseModel):
+    display_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    role: Optional[str] = None
+    password: Optional[str] = None
+    companies: Optional[List[int]] = None
+    permissions: Optional[List[UserTabPermissionUpdate]] = None
 
 # Company schemas
 class CompanyBase(BaseModel):

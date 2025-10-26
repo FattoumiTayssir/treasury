@@ -5,6 +5,7 @@ import type {
   Exception,
   User,
   Company,
+  TabDefinition,
   TreasuryBalance,
   TreasuryForecast,
   CategoryBreakdown,
@@ -95,10 +96,18 @@ export const treasuryApi = {
 export const usersApi = {
   getAll: () => api.get<User[]>('/users'),
   getById: (id: string) => api.get<User>(`/users/${id}`),
-  create: (user: Omit<User, 'id'>) => api.post<User>('/users', user),
-  update: (id: string, user: Partial<User>) => api.put<User>(`/users/${id}`, user),
+  getTabs: () => api.get<TabDefinition[]>('/users/tabs'),
+  create: (data: { display_name: string; email: string; role: string; password: string }) => 
+    api.post<User>('/users', data),
+  update: (id: string, data: {
+    display_name?: string
+    email?: string
+    role?: string
+    password?: string
+    companies?: number[]
+    permissions?: Array<{ tabName: string; canView: boolean; canModify: boolean }>
+  }) => api.put<User>(`/users/${id}`, data),
   delete: (id: string) => api.delete(`/users/${id}`),
-  getCurrent: () => api.get<User>('/users/me'),
 }
 
 // Companies

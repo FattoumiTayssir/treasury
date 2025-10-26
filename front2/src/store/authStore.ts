@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { User } from '@/types'
-import { mockLogin, mockLogout } from '@/services/mockAuth'
+import { authApi } from '@/services/api'
 
 interface AuthState {
   user: User | null
@@ -10,11 +10,13 @@ interface AuthState {
   setToken: (token: string | null) => void
   login: (email: string, password: string) => Promise<void>
   logout: () => void
+  hasPermission: (tabName: string, requireModify?: boolean) => boolean
+  isAdmin: () => boolean
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       token: null,
       setUser: (user) => set({ user }),
@@ -27,15 +29,39 @@ export const useAuthStore = create<AuthState>()(
         }
       },
       login: async (email: string, password: string) => {
-        // Using mock authentication
-        const response = await mockLogin(email, password)
-        set({ user: response.user, token: response.token })
-        localStorage.setItem('auth_token', response.token)
+        const response = await authApi.login(email, password)
+        set({ user: response.data.user, token: response.data.token })
+        localStorage.setItem('auth_token', response.data.token)
       },
       logout: async () => {
-        await mockLogout()
+        try {
+          await authApi.logout()
+        } catch (error) {
+          // Continue with logout even if API call fails
+          console.error('Logout error:', error)
+        }
         set({ user: null, token: null })
         localStorage.removeItem('auth_token')
+      },
+      hasPermission: (tabName: string, requireModify: boolean = false) => {
+        const { user } = get()
+        if (!user) return false
+        
+        // Admins have all permissions
+        if (user.role === 'Admin') return true
+        
+        // Check specific permission
+        const permission = user.permissions?.find(p => p.tabName === tabName)
+        if (!permission) return false
+        
+        if (requireModify) {
+          return permission.canModify
+        }
+        return permission.canView
+      },
+      isAdmin: () => {
+        const { user } = get()
+        return user?.role === 'Admin' || false
       },
     }),
     {

@@ -10,11 +10,13 @@ class User(Base):
     display_name = Column(String(120), nullable=False)
     email = Column(String(254), nullable=False, unique=True)
     role = Column(String(20), nullable=False)
+    password_hash = Column(String(255), nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
     
     movements_created = relationship("Movement", foreign_keys="Movement.created_by", back_populates="creator")
     user_companies = relationship("UserCompany", back_populates="user")
+    user_permissions = relationship("UserTabPermission", back_populates="user", cascade="all, delete-orphan")
 
 class Company(Base):
     __tablename__ = "company"
@@ -159,4 +161,35 @@ class TreasuryBalanceSource(Base):
     
     __table_args__ = (
         Index("IX_TreasuryBalanceSource_treasury", "treasury_balance_id"),
+    )
+
+class TabPermission(Base):
+    __tablename__ = "tab_permissions"
+    
+    tab_id = Column(Integer, primary_key=True, index=True)
+    tab_name = Column(String(50), nullable=False, unique=True)
+    tab_label = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+    
+    user_permissions = relationship("UserTabPermission", back_populates="tab", cascade="all, delete-orphan")
+
+class UserTabPermission(Base):
+    __tablename__ = "user_tab_permissions"
+    
+    user_tab_permission_id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("User.user_id", ondelete="CASCADE"), nullable=False)
+    tab_id = Column(Integer, ForeignKey("tab_permissions.tab_id", ondelete="CASCADE"), nullable=False)
+    can_view = Column(Boolean, nullable=False, server_default="false")
+    can_modify = Column(Boolean, nullable=False, server_default="false")
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+    updated_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
+    
+    user = relationship("User", back_populates="user_permissions")
+    tab = relationship("TabPermission", back_populates="user_permissions")
+    
+    __table_args__ = (
+        Index("IX_user_tab_permissions_user", "user_id"),
+        Index("IX_user_tab_permissions_tab", "tab_id"),
+        UniqueConstraint("user_id", "tab_id", name="UX_user_tab_permissions"),
     )

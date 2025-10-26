@@ -92,12 +92,28 @@ export interface Exception {
   excludeFromAnalytics: boolean
 }
 
+export interface TabPermission {
+  tabId: number
+  tabName: string
+  tabLabel: string
+  canView: boolean
+  canModify: boolean
+}
+
 export interface User {
   id: string
   name: string
   email: string
-  role: 'Admin' | 'Gestionnaire'
+  role: 'Admin' | 'Manager'
   companies: string[]
+  permissions: TabPermission[]
+}
+
+export interface TabDefinition {
+  id: number
+  name: string
+  label: string
+  description?: string
 }
 
 export interface Company {

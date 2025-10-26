@@ -1,11 +1,11 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { Layout } from '@/components/layout/Layout'
-import { Dashboard } from '@/pages/Dashboard'
 import AnalyticsRecharts from '@/pages/AnalyticsRecharts'
 import { Movements } from '@/pages/Movements'
 import { ManualEntries } from '@/pages/ManualEntries'
 import { Exceptions } from '@/pages/Exceptions'
 import { TreasurySettings } from '@/pages/TreasurySettings'
+import { UserManagement } from '@/pages/UserManagement'
 import { Login } from '@/pages/Login'
 import { useAuthStore } from '@/store/authStore'
 import { Toaster } from '@/components/ui/toaster'
@@ -20,6 +20,29 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+interface PermissionRouteProps {
+  children: React.ReactNode
+  tabName?: string
+  requireModify?: boolean
+  adminOnly?: boolean
+}
+
+function PermissionRoute({ children, tabName, requireModify = false, adminOnly = false }: PermissionRouteProps) {
+  const { hasPermission, isAdmin } = useAuthStore()
+
+  // Admin-only routes
+  if (adminOnly && !isAdmin()) {
+    return <Navigate to="/analytics" replace />
+  }
+
+  // Tab permission check
+  if (tabName && !isAdmin() && !hasPermission(tabName, requireModify)) {
+    return <Navigate to="/analytics" replace />
+  }
+
+  return <>{children}</>
+}
+
 function App() {
   return (
     <Router>
@@ -31,12 +54,55 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/analytics" element={<AnalyticsRecharts />} />
-                  <Route path="/movements" element={<Movements />} />
-                  <Route path="/manual-entries" element={<ManualEntries />} />
-                  <Route path="/exceptions" element={<Exceptions />} />
-                  <Route path="/settings" element={<TreasurySettings />} />
+                  <Route path="/" element={<Navigate to="/analytics" replace />} />
+                  <Route 
+                    path="/analytics" 
+                    element={
+                      <PermissionRoute tabName="analytics">
+                        <AnalyticsRecharts />
+                      </PermissionRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/movements" 
+                    element={
+                      <PermissionRoute tabName="movements">
+                        <Movements />
+                      </PermissionRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/manual-entries" 
+                    element={
+                      <PermissionRoute tabName="manual-entries">
+                        <ManualEntries />
+                      </PermissionRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/exceptions" 
+                    element={
+                      <PermissionRoute tabName="exceptions">
+                        <Exceptions />
+                      </PermissionRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/settings" 
+                    element={
+                      <PermissionRoute tabName="settings">
+                        <TreasurySettings />
+                      </PermissionRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/users" 
+                    element={
+                      <PermissionRoute adminOnly>
+                        <UserManagement />
+                      </PermissionRoute>
+                    } 
+                  />
                 </Routes>
               </Layout>
             </ProtectedRoute>
