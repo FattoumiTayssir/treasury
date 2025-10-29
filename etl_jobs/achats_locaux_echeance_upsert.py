@@ -264,3 +264,4 @@ with conn.cursor() as cur:
 
 conn.close()
 print(f"Insert completed: {ETL_TYPE}")
+print(f"Successfully inserted {len(inserted_movement_refs)} records")

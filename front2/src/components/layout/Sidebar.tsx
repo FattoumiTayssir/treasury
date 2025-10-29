@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   Settings,
   Users,
+  RefreshCw,
 } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { useAuthStore } from '@/store/authStore'
@@ -20,6 +21,7 @@ const navigation = [
 
 const adminNavigation = [
   { name: 'Gestion des utilisateurs', href: '/users', icon: Users, adminOnly: true },
+  { name: 'Actualiser les données', href: '/data-refresh', icon: RefreshCw, adminOnly: true },
 ]
 
 export function Sidebar() {

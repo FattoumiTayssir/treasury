@@ -196,3 +196,29 @@ class UserTabPermission(Base):
         Index("IX_user_tab_permissions_tab", "tab_id"),
         UniqueConstraint("user_id", "tab_id", name="UX_user_tab_permissions"),
     )
+
+class DataRefreshExecution(Base):
+    __tablename__ = "data_refresh_execution"
+    
+    execution_id = Column(Integer, primary_key=True, index=True)
+    status = Column(String(20), nullable=False)
+    started_by = Column(Integer, ForeignKey("User.user_id"), nullable=False)
+    started_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+    completed_at = Column(TIMESTAMP(timezone=True), nullable=True)
+    duration_seconds = Column(Integer, nullable=True)
+    total_records_processed = Column(Integer, nullable=False, server_default="0")
+    error_message = Column(Text, nullable=True)
+    progress_percentage = Column(Integer, nullable=False, server_default="0")
+    current_step = Column(String(100), nullable=True)
+    details = Column(JSON, nullable=True)
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+    
+    starter = relationship("User", foreign_keys=[started_by])
+    
+    __table_args__ = (
+        Index("IX_data_refresh_execution_status", "status"),
+        Index("IX_data_refresh_execution_started_by", "started_by"),
+        Index("IX_data_refresh_execution_started_at", "started_at"),
+        CheckConstraint("status IN ('running', 'completed', 'failed', 'cancelled')", name="CK_data_refresh_status"),
+        CheckConstraint("progress_percentage >= 0 AND progress_percentage <= 100", name="CK_data_refresh_progress"),
+    )

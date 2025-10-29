@@ -136,4 +136,31 @@ export const analyticsApi = {
     api.get<TreasuryMetrics>(`/analytics/metrics/${companyId}`),
 }
 
+// Data Refresh
+export interface DataRefreshExecution {
+  executionId: number
+  status: 'running' | 'completed' | 'failed' | 'cancelled'
+  startedBy: string
+  startedByEmail: string
+  startedAt: string
+  completedAt?: string
+  durationSeconds?: number
+  totalRecordsProcessed: number
+  errorMessage?: string
+  progressPercentage: number
+  currentStep?: string
+  details?: any
+}
+
+export interface DataRefreshStatus {
+  isRunning: boolean
+  currentExecution?: DataRefreshExecution
+}
+
+export const dataRefreshApi = {
+  start: () => api.post<{ message: string; executionId: number; status: string }>('/data-refresh/start'),
+  getStatus: () => api.get<DataRefreshStatus>('/data-refresh/status'),
+  getHistory: (limit = 20) => api.get<DataRefreshExecution[]>('/data-refresh/history', { params: { limit } }),
+}
+
 export default api

@@ -206,9 +206,13 @@ with conn.cursor() as cur:
         name = f"{base_name} (ID:{odoo_id})" if odoo_id else base_name
         odoo_link = f"{URL}/web#id={odoo_id}&model=account.move&view_type=form" if odoo_id else ""
 
-        # Récupérer le taux de change
+        # Récupérer le taux de change et convertir EUR -> TND
         custom_rate = r.get("custom_rate")
         exchange_rate = float(custom_rate) if custom_rate else None
+        
+        # Convert EUR amount to TND using exchange_rate
+        # total from Odoo is in EUR, we need to convert it to TND
+        amount_tnd = abs(total * exchange_rate) if exchange_rate and exchange_rate > 0 else abs(total)
         
         reason = None
         if due and due < TODAY:
@@ -229,13 +233,13 @@ with conn.cursor() as cur:
             if ref_key in inserted_exception_refs:
                 continue
             
-            # Insert Exception
+            # Insert Exception with TND amount
             sql = (
                 'INSERT INTO "Exception"(company_id, category, type, exception_type, criticity, description, amount, sign, reference_type, reference, reference_status, odoo_link, status, created_at) '
                 'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
             )
             params = (
-                company_id, "Achat", ETL_TYPE, "Auto", "Warning", reason, abs(total), sign, reference_type, name, reference_status, odoo_link, "Actif", NOW_ISO,
+                company_id, "Achat", ETL_TYPE, "Auto", "Warning", reason, amount_tnd, sign, reference_type, name, reference_status, odoo_link, "Actif", NOW_ISO,
             )
             cur.execute(sql, params)
             inserted_exception_refs.add(ref_key)
@@ -245,9 +249,9 @@ with conn.cursor() as cur:
         if ref_key in inserted_movement_refs:
             continue
         
-        # Insert Movement
+        # Insert Movement with TND amount
         movement_date = (due or inv_date or TODAY).isoformat()
-        amount = abs(total)
+        amount = amount_tnd
         archive_version = 1
         
         insert_sql = (
@@ -264,3 +268,4 @@ with conn.cursor() as cur:
 
 conn.close()
 print(f"Insert completed: {ETL_TYPE}")
+print(f"Successfully inserted {len(inserted_movement_refs)} records")

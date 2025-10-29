@@ -10,7 +10,8 @@ from app.routers import (
     treasury,
     dashboard,
     odoo,
-    analytics
+    analytics,
+    data_refresh
 )
 
 app = FastAPI(
@@ -39,6 +40,7 @@ app.include_router(treasury.router)
 app.include_router(dashboard.router)
 app.include_router(odoo.router)
 app.include_router(analytics.router)
+app.include_router(data_refresh.router)
 
 @app.get("/")
 def root():

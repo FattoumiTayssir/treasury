@@ -42,9 +42,9 @@ import type {
 const categories: Category[] = ['RH', 'Achat', 'Vente', 'Compta', 'Autre']
 
 const valueFormatter = (value: number) => {
-  return new Intl.NumberFormat('fr-FR', {
+  return new Intl.NumberFormat('fr-TN', {
     style: 'currency',
-    currency: 'EUR',
+    currency: 'TND',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value)

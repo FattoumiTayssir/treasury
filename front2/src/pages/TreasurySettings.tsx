@@ -204,9 +204,9 @@ export function TreasurySettings() {
   }
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('fr-FR', {
+    return new Intl.NumberFormat('fr-TN', {
       style: 'currency',
-      currency: 'EUR',
+      currency: 'TND',
     }).format(value)
   }
 
@@ -346,7 +346,7 @@ export function TreasurySettings() {
                           <Input
                             id={`source-name-${source.id}`}
                             type="text"
-                            placeholder="Ex: BNP Paribas, Crédit Agricole, Caisse"
+                            placeholder="Ex: Banque A, Caisse, Chèque, Traite"
                             value={source.sourceName}
                             onChange={(e) => updateSource(source.id, 'sourceName', e.target.value)}
                             disabled={isLoading}
@@ -355,7 +355,7 @@ export function TreasurySettings() {
 
                         <div className="space-y-1">
                           <Label htmlFor={`source-amount-${source.id}`} className="text-xs">
-                            Montant (EUR) *
+                            Montant (TND) *
                           </Label>
                           <Input
                             id={`source-amount-${source.id}`}

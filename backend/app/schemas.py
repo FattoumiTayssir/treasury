@@ -311,3 +311,37 @@ class CheckReferenceResponse(BaseModel):
     exists: bool
     type: Optional[str] = None
     state: Optional[str] = None
+
+# Data Refresh schemas
+class DataRefreshExecutionResponse(BaseModel):
+    executionId: int
+    status: str
+    startedBy: str  # User display name
+    startedByEmail: str
+    startedAt: str
+    completedAt: Optional[str] = None
+    durationSeconds: Optional[int] = None
+    totalRecordsProcessed: int = 0
+    errorMessage: Optional[str] = None
+    progressPercentage: int = 0
+    currentStep: Optional[str] = None
+    details: Optional[dict] = None
+
+    class Config:
+        from_attributes = True
+
+class DataRefreshStartResponse(BaseModel):
+    message: str
+    executionId: int
+    status: str
+
+class DataRefreshStatusResponse(BaseModel):
+    isRunning: bool
+    currentExecution: Optional[DataRefreshExecutionResponse] = None
+
+class DataRefreshProgressUpdate(BaseModel):
+    executionId: int
+    progressPercentage: int
+    currentStep: str
+    status: str
+    details: Optional[dict] = None

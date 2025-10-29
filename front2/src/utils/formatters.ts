@@ -2,9 +2,9 @@ import { format, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
 export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('fr-FR', {
+  return new Intl.NumberFormat('fr-TN', {
     style: 'currency',
-    currency: 'EUR',
+    currency: 'TND',
   }).format(amount)
 }
 
