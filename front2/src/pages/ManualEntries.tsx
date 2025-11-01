@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, List, Grid } from 'lucide-react'
+import { Plus, List, Grid, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useDataStore } from '@/store/dataStore'
@@ -7,11 +7,17 @@ import { useAuthStore } from '@/store/authStore'
 import { ManualEntriesTable } from '@/components/manual-entries/ManualEntriesTable'
 import { ManualEntryForm } from '@/components/manual-entries/ManualEntryForm'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
+import { manualEntriesApi } from '@/services/api'
+import { useToast } from '@/hooks/use-toast'
 
 export function ManualEntries() {
-  const { manualEntries, selectedCompanies, fetchManualEntries, isLoading } = useDataStore()
+  const { manualEntries, selectedCompanies, fetchManualEntries, fetchMovements, isLoading } = useDataStore()
   const { user } = useAuthStore()
+  const { toast } = useToast()
   const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     fetchManualEntries()
@@ -30,6 +36,28 @@ export function ManualEntries() {
     )
   }
 
+  const handleDeleteAll = async () => {
+    setIsDeleting(true)
+    try {
+      await manualEntriesApi.deleteAll()
+      toast({
+        title: 'Suppression réussie',
+        description: 'Toutes les entrées manuelles ont été supprimées',
+      })
+      await fetchManualEntries()
+      await fetchMovements()
+      setShowDeleteAllConfirm(false)
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: error.response?.data?.message || 'Impossible de supprimer les entrées',
+      })
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -39,10 +67,20 @@ export function ManualEntries() {
             Gérez les mouvements financiers manuels
           </p>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nouvelle entrée
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="destructive" 
+            onClick={() => setShowDeleteAllConfirm(true)}
+            disabled={manualEntries.length === 0}
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Supprimer tout
+          </Button>
+          <Button onClick={() => setShowCreateDialog(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nouvelle entrée
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="list" className="w-full">
@@ -79,6 +117,17 @@ export function ManualEntries() {
           <ManualEntryForm onClose={() => setShowCreateDialog(false)} />
         </DialogContent>
       </Dialog>
+
+      <ConfirmationDialog
+        open={showDeleteAllConfirm}
+        onOpenChange={setShowDeleteAllConfirm}
+        title="Supprimer toutes les entrées manuelles"
+        description="Êtes-vous sûr de vouloir supprimer toutes les entrées manuelles ? Cette action supprimera également tous les mouvements associés et ne peut pas être annulée."
+        confirmText="Supprimer tout"
+        onConfirm={handleDeleteAll}
+        isLoading={isDeleting}
+        variant="destructive"
+      />
     </div>
   )
 }

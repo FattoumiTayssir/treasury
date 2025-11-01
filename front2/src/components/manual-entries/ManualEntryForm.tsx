@@ -8,6 +8,7 @@ import { manualEntriesApi } from '@/services/api'
 import { useToast } from '@/hooks/use-toast'
 import { useDataStore } from '@/store/dataStore'
 import { Category, Sign, Frequency, Visibility, ManualEntry } from '@/types'
+import { AlertCircle } from 'lucide-react'
 
 interface ManualEntryFormProps {
   entry?: ManualEntry
@@ -15,6 +16,7 @@ interface ManualEntryFormProps {
 }
 
 const categories: Category[] = ['RH', 'Achat', 'Vente', 'Compta', 'Autre']
+const types = ['Salaire', 'Charges sociales', 'Achat Local', 'Achat Importation', 'Vente Local', 'Vente Export', 'TVA', 'IS', 'Autre']
 const signs: Sign[] = ['Entrée', 'Sortie']
 const frequencies: Frequency[] = ['Une seule fois', 'Mensuel', 'Annuel', 'Dates personnalisées']
 const visibilities: Visibility[] = ['Public', 'Simulation privée']
@@ -36,6 +38,21 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
   const [newDate, setNewDate] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showUpdateConfirm, setShowUpdateConfirm] = useState(false)
+  
+  // Validation errors
+  const [errors, setErrors] = useState({
+    category: '',
+    type: '',
+    amount: '',
+    sign: '',
+    frequency: '',
+    startDate: '',
+    endDate: '',
+    customDates: '',
+    reference: '',
+    note: '',
+    visibility: ''
+  })
   const { toast } = useToast()
   const { fetchManualEntries, fetchMovements, selectedCompanies } = useDataStore()
   const isEditMode = !!entry
@@ -76,6 +93,79 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    // Reset errors
+    setErrors({
+      category: '',
+      type: '',
+      amount: '',
+      sign: '',
+      frequency: '',
+      startDate: '',
+      endDate: '',
+      customDates: '',
+      reference: '',
+      note: '',
+      visibility: ''
+    })
+
+    // Validate all fields
+    let hasError = false
+    const newErrors = { ...errors }
+
+    if (!formData.category) {
+      newErrors.category = 'La catégorie est requise'
+      hasError = true
+    }
+
+    if (!formData.type) {
+      newErrors.type = 'Le type est requis'
+      hasError = true
+    }
+
+    if (!formData.amount || parseFloat(formData.amount) <= 0) {
+      newErrors.amount = 'Le montant doit être supérieur à 0'
+      hasError = true
+    }
+
+    if (!formData.sign) {
+      newErrors.sign = 'Le signe est requis'
+      hasError = true
+    }
+
+    if (!formData.frequency) {
+      newErrors.frequency = 'La fréquence est requise'
+      hasError = true
+    }
+
+    if (formData.frequency === 'Dates personnalisées') {
+      if (customDates.length === 0) {
+        newErrors.customDates = 'Veuillez ajouter au moins une date'
+        hasError = true
+      }
+    } else if (formData.frequency === 'Une seule fois') {
+      if (!formData.startDate) {
+        newErrors.startDate = 'La date est requise'
+        hasError = true
+      }
+    } else {
+      if (!formData.startDate) {
+        newErrors.startDate = 'La date de début est requise'
+        hasError = true
+      }
+      if (!formData.endDate) {
+        newErrors.endDate = 'La date de fin est requise'
+        hasError = true
+      } else if (formData.startDate && formData.endDate < formData.startDate) {
+        newErrors.endDate = 'La date de fin doit être après la date de début'
+        hasError = true
+      }
+    }
+
+    if (hasError) {
+      setErrors(newErrors)
+      return
+    }
+    
     // Show confirmation dialog for updates
     if (isEditMode) {
       setShowUpdateConfirm(true)
@@ -94,16 +184,6 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
         variant: 'destructive',
         title: 'Erreur',
         description: 'Veuillez sélectionner une compagnie dans le header',
-      })
-      return
-    }
-
-    // Validate custom dates
-    if (formData.frequency === 'Dates personnalisées' && customDates.length === 0) {
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Veuillez ajouter au moins une date',
       })
       return
     }
@@ -187,11 +267,12 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
           <Label>Catégorie *</Label>
           <Select
             value={formData.category}
-            onValueChange={(value: Category) =>
+            onValueChange={(value: Category) => {
               setFormData({ ...formData, category: value })
-            }
+              setErrors({ ...errors, category: '' })
+            }}
           >
-            <SelectTrigger>
+            <SelectTrigger className={errors.category ? 'border-red-500 focus-visible:ring-red-500' : ''}>
               <SelectValue placeholder="Sélectionner..." />
             </SelectTrigger>
             <SelectContent>
@@ -202,16 +283,40 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
               ))}
             </SelectContent>
           </Select>
+          {errors.category && (
+            <div className="flex items-center gap-1 text-sm text-red-600">
+              <AlertCircle className="w-4 h-4" />
+              <span>{errors.category}</span>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">
           <Label>Type *</Label>
-          <Input
+          <Select
             value={formData.type}
-            onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-            placeholder="Ex: Salaires, TVA..."
-            required
-          />
+            onValueChange={(value) => {
+              setFormData({ ...formData, type: value })
+              setErrors({ ...errors, type: '' })
+            }}
+          >
+            <SelectTrigger className={errors.type ? 'border-red-500 focus-visible:ring-red-500' : ''}>
+              <SelectValue placeholder="Sélectionner..." />
+            </SelectTrigger>
+            <SelectContent>
+              {types.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.type && (
+            <div className="flex items-center gap-1 text-sm text-red-600">
+              <AlertCircle className="w-4 h-4" />
+              <span>{errors.type}</span>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -220,21 +325,31 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
             type="number"
             step="0.01"
             value={formData.amount}
-            onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+            onChange={(e) => {
+              setFormData({ ...formData, amount: e.target.value })
+              setErrors({ ...errors, amount: '' })
+            }}
             placeholder="0.00"
-            required
+            className={errors.amount ? 'border-red-500 focus-visible:ring-red-500' : ''}
           />
+          {errors.amount && (
+            <div className="flex items-center gap-1 text-sm text-red-600">
+              <AlertCircle className="w-4 h-4" />
+              <span>{errors.amount}</span>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">
           <Label>Signe *</Label>
           <Select
             value={formData.sign}
-            onValueChange={(value: Sign) =>
+            onValueChange={(value: Sign) => {
               setFormData({ ...formData, sign: value })
-            }
+              setErrors({ ...errors, sign: '' })
+            }}
           >
-            <SelectTrigger>
+            <SelectTrigger className={errors.sign ? 'border-red-500 focus-visible:ring-red-500' : ''}>
               <SelectValue placeholder="Sélectionner..." />
             </SelectTrigger>
             <SelectContent>
@@ -245,17 +360,24 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
               ))}
             </SelectContent>
           </Select>
+          {errors.sign && (
+            <div className="flex items-center gap-1 text-sm text-red-600">
+              <AlertCircle className="w-4 h-4" />
+              <span>{errors.sign}</span>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">
           <Label>Fréquence *</Label>
           <Select
             value={formData.frequency}
-            onValueChange={(value: Frequency) =>
+            onValueChange={(value: Frequency) => {
               setFormData({ ...formData, frequency: value })
-            }
+              setErrors({ ...errors, frequency: '' })
+            }}
           >
-            <SelectTrigger>
+            <SelectTrigger className={errors.frequency ? 'border-red-500 focus-visible:ring-red-500' : ''}>
               <SelectValue placeholder="Sélectionner..." />
             </SelectTrigger>
             <SelectContent>
@@ -266,6 +388,12 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
               ))}
             </SelectContent>
           </Select>
+          {errors.frequency && (
+            <div className="flex items-center gap-1 text-sm text-red-600">
+              <AlertCircle className="w-4 h-4" />
+              <span>{errors.frequency}</span>
+            </div>
+          )}
         </div>
 
         {formData.frequency === 'Une seule fois' ? (
@@ -274,11 +402,18 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
             <Input
               type="date"
               value={formData.startDate}
-              onChange={(e) =>
+              onChange={(e) => {
                 setFormData({ ...formData, startDate: e.target.value })
-              }
-              required
+                setErrors({ ...errors, startDate: '' })
+              }}
+              className={errors.startDate ? 'border-red-500 focus-visible:ring-red-500' : ''}
             />
+            {errors.startDate && (
+              <div className="flex items-center gap-1 text-sm text-red-600">
+                <AlertCircle className="w-4 h-4" />
+                <span>{errors.startDate}</span>
+              </div>
+            )}
           </div>
         ) : formData.frequency === 'Dates personnalisées' ? (
           <div className="col-span-2 space-y-2">
@@ -289,6 +424,7 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
                 value={newDate}
                 onChange={(e) => setNewDate(e.target.value)}
                 placeholder="Sélectionner une date"
+                className={errors.customDates ? 'border-red-500 focus-visible:ring-red-500' : ''}
               />
               <Button type="button" onClick={addCustomDate} disabled={!newDate}>
                 Ajouter
@@ -316,6 +452,12 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
                 </div>
               </div>
             )}
+            {errors.customDates && (
+              <div className="flex items-center gap-1 text-sm text-red-600">
+                <AlertCircle className="w-4 h-4" />
+                <span>{errors.customDates}</span>
+              </div>
+            )}
             <p className="text-xs text-muted-foreground">
               Ajoutez une ou plusieurs dates pour créer des mouvements à ces dates spécifiques
             </p>
@@ -327,11 +469,18 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
               <Input
                 type="date"
                 value={formData.startDate}
-                onChange={(e) =>
+                onChange={(e) => {
                   setFormData({ ...formData, startDate: e.target.value })
-                }
-                required
+                  setErrors({ ...errors, startDate: '' })
+                }}
+                className={errors.startDate ? 'border-red-500 focus-visible:ring-red-500' : ''}
               />
+              {errors.startDate && (
+                <div className="flex items-center gap-1 text-sm text-red-600">
+                  <AlertCircle className="w-4 h-4" />
+                  <span>{errors.startDate}</span>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -339,16 +488,24 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
               <Input
                 type="date"
                 value={formData.endDate}
-                onChange={(e) =>
+                onChange={(e) => {
                   setFormData({ ...formData, endDate: e.target.value })
-                }
-                required
+                  setErrors({ ...errors, endDate: '' })
+                }}
                 min={formData.startDate}
+                className={errors.endDate ? 'border-red-500 focus-visible:ring-red-500' : ''}
               />
-              <p className="text-xs text-muted-foreground">
-                {formData.frequency === 'Mensuel' && 'Les mouvements seront générés mensuellement dans cette plage'}
-                {formData.frequency === 'Annuel' && 'Les mouvements seront générés annuellement dans cette plage'}
-              </p>
+              {errors.endDate ? (
+                <div className="flex items-center gap-1 text-sm text-red-600">
+                  <AlertCircle className="w-4 h-4" />
+                  <span>{errors.endDate}</span>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  {formData.frequency === 'Mensuel' && 'Les mouvements seront générés mensuellement dans cette plage'}
+                  {formData.frequency === 'Annuel' && 'Les mouvements seront générés annuellement dans cette plage'}
+                </p>
+              )}
             </div>
           </>
         )}
@@ -357,20 +514,31 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
           <Label>Référence</Label>
           <Input
             value={formData.reference}
-            onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
+            onChange={(e) => {
+              setFormData({ ...formData, reference: e.target.value })
+              setErrors({ ...errors, reference: '' })
+            }}
             placeholder="Optionnel"
+            className={errors.reference ? 'border-red-500 focus-visible:ring-red-500' : ''}
           />
+          {errors.reference && (
+            <div className="flex items-center gap-1 text-sm text-red-600">
+              <AlertCircle className="w-4 h-4" />
+              <span>{errors.reference}</span>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">
           <Label>Visibilité</Label>
           <Select
             value={formData.visibility}
-            onValueChange={(value: Visibility) =>
+            onValueChange={(value: Visibility) => {
               setFormData({ ...formData, visibility: value })
-            }
+              setErrors({ ...errors, visibility: '' })
+            }}
           >
-            <SelectTrigger>
+            <SelectTrigger className={errors.visibility ? 'border-red-500 focus-visible:ring-red-500' : ''}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -381,6 +549,12 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
               ))}
             </SelectContent>
           </Select>
+          {errors.visibility && (
+            <div className="flex items-center gap-1 text-sm text-red-600">
+              <AlertCircle className="w-4 h-4" />
+              <span>{errors.visibility}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -388,9 +562,19 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
         <Label>Note</Label>
         <Input
           value={formData.note}
-          onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+          onChange={(e) => {
+            setFormData({ ...formData, note: e.target.value })
+            setErrors({ ...errors, note: '' })
+          }}
           placeholder="Description optionnelle"
+          className={errors.note ? 'border-red-500 focus-visible:ring-red-500' : ''}
         />
+        {errors.note && (
+          <div className="flex items-center gap-1 text-sm text-red-600">
+            <AlertCircle className="w-4 h-4" />
+            <span>{errors.note}</span>
+          </div>
+        )}
       </div>
 
       <div className="flex justify-end gap-2 pt-4">

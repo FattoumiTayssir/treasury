@@ -133,8 +133,17 @@ def get_forecast(
     # Generate forecast data
     forecast_data = []
     today = datetime.now().date()
-    start_date = today - timedelta(days=30)
-    end_date = today + timedelta(days=forecast_days)
+    
+    # Use provided date range or defaults
+    if date_from:
+        start_date = datetime.fromisoformat(date_from).date()
+    else:
+        start_date = today - timedelta(days=30)
+    
+    if date_to:
+        end_date = datetime.fromisoformat(date_to).date()
+    else:
+        end_date = today + timedelta(days=forecast_days)
     
     current_balance = baseline_balance
     current_date = start_date
@@ -151,6 +160,7 @@ def get_forecast(
         forecast_data.append({
             "date": date_str,
             "actualBalance": current_balance if is_past else None,
+            "baselineBalance": round(baseline_balance, 2),  # Constant baseline for reference
             "predictedBalance": round(current_balance + net_change, 2),
             "inflow": round(inflow, 2),
             "outflow": round(outflow, 2),
@@ -236,6 +246,15 @@ def get_cash_flow_analysis(
         models.Movement.status == "Actif"
     ).order_by(models.Movement.movement_date).all()
     
+    # Apply date filters to movements if provided
+    filtered_movements = movements
+    if date_from:
+        from_date = datetime.fromisoformat(date_from).date()
+        filtered_movements = [m for m in filtered_movements if m.movement_date >= from_date]
+    if date_to:
+        to_date = datetime.fromisoformat(date_to).date()
+        filtered_movements = [m for m in filtered_movements if m.movement_date <= to_date]
+    
     # Group movements by month
     monthly_data = defaultdict(lambda: {
         "inflow": 0,
@@ -246,7 +265,7 @@ def get_cash_flow_analysis(
     baseline_balance = float(treasury_baseline.amount)
     running_balance = baseline_balance
     
-    for movement in movements:
+    for movement in filtered_movements:
         month_key = movement.movement_date.strftime("%b %Y")
         amount = float(movement.amount)
         
@@ -259,13 +278,16 @@ def get_cash_flow_analysis(
         
         monthly_data[month_key]["balances"].append(running_balance)
     
-    # Format response for last 6 months
-    today = datetime.now()
+    # Get unique months from filtered movements, sorted
+    if filtered_movements:
+        unique_months = sorted(set(m.movement_date.strftime("%b %Y") for m in filtered_movements))
+    else:
+        # If no movements in range, show current month
+        unique_months = [datetime.now().strftime("%b %Y")]
+    
     cash_flow = []
     
-    for i in range(5, -1, -1):
-        month_date = today - timedelta(days=30 * i)
-        month_key = month_date.strftime("%b %Y")
+    for month_key in unique_months:
         
         data = monthly_data.get(month_key, {"inflow": 0, "outflow": 0, "balances": [baseline_balance]})
         inflow = data["inflow"]

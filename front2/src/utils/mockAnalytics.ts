@@ -8,7 +8,7 @@ import type {
 // Generate mock forecast data for the next 90 days
 export function generateMockForecast(
   baselineBalance: number = 1250000,
-  baselineDate: Date = new Date()
+  _baselineDate: Date = new Date()
 ): TreasuryForecast[] {
   const data: TreasuryForecast[] = []
   const today = new Date()
@@ -37,6 +37,7 @@ export function generateMockForecast(
     data.push({
       date: date.toISOString().split('T')[0],
       actualBalance: i <= 0 ? currentBalance : null,
+      baselineBalance: baselineBalance,  // Constant baseline for reference
       predictedBalance: Math.round(predictedBalance),
       inflow,
       outflow,

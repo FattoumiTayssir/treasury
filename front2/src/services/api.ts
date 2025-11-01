@@ -53,6 +53,7 @@ export const manualEntriesApi = {
   update: (id: string, entry: Partial<ManualEntry>) =>
     api.put<ManualEntry>(`/manual-entries/${id}`, entry),
   delete: (ids: string[]) => api.post('/manual-entries/delete', { ids }),
+  deleteAll: () => api.post('/manual-entries/delete-all'),
   getMovements: (id: string) => api.get<FinancialMovement[]>(`/manual-entries/${id}/movements`),
 }
 

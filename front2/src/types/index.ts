@@ -200,6 +200,7 @@ export interface ExceptionFilters {
 export interface TreasuryForecast {
   date: string
   actualBalance: number | null
+  baselineBalance?: number  // Constant baseline treasury for reference
   predictedBalance: number
   inflow: number
   outflow: number

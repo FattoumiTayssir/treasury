@@ -310,6 +310,19 @@ def delete_manual_entries(data: schemas.ManualEntryDelete, db: Session = Depends
     db.commit()
     return {"message": "Manual entries deleted successfully"}
 
+@router.post("/delete-all")
+def delete_all_manual_entries(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    # Delete all movements associated with manual entries
+    db.query(models.Movement).filter(
+        models.Movement.manual_entry_id.isnot(None)
+    ).delete()
+    
+    # Delete all manual entries
+    db.query(models.ManualEntry).delete()
+    
+    db.commit()
+    return {"message": "All manual entries deleted successfully"}
+
 @router.get("/{id}/movements", response_model=List[schemas.MovementResponse])
 def get_manual_entry_movements(id: str, db: Session = Depends(get_db)):
     movements = db.query(models.Movement).filter(

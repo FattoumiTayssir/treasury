@@ -31,7 +31,6 @@ import type {
   CategoryBreakdown,
   CashFlowAnalysis,
   TreasuryMetrics,
-  Category,
   TreasuryBalance,
 } from '@/types'
 
@@ -90,6 +89,25 @@ export default function AnalyticsRecharts() {
   const [cashFlowData, setCashFlowData] = useState<CashFlowAnalysis[]>([])
   const [metrics, setMetrics] = useState<TreasuryMetrics | null>(null)
   const [loading, setLoading] = useState(true)
+  
+  // Date filter state - default to today to 3 months future
+  const today = new Date().toISOString().split('T')[0]
+  const [dateFrom, setDateFrom] = useState<string>(today)
+  const [dateTo, setDateTo] = useState<string>(() => {
+    const date = new Date()
+    date.setMonth(date.getMonth() + 3)
+    return date.toISOString().split('T')[0]
+  })
+  
+  // Calculated metrics from filtered data
+  const [filteredMetrics, setFilteredMetrics] = useState<{
+    balanceAtStart: number
+    balanceAtEnd: number
+    totalInflow: number
+    totalOutflow: number
+    changeAmount: number
+    changePercent: number
+  } | null>(null)
 
   const loadTreasuryBalance = useCallback(async () => {
     if (!selectedCompany) return
@@ -111,7 +129,11 @@ export default function AnalyticsRecharts() {
       const filters = {
         companyId: selectedCompany,
         forecastDays: 90,
+        dateFrom: dateFrom,
+        dateTo: dateTo,
       }
+      
+      console.log('Loading analytics with filters:', filters)
 
       const [forecast, breakdown, cashFlow, metricsData] = await Promise.all([
         analyticsApi.getForecast(filters),
@@ -124,19 +146,60 @@ export default function AnalyticsRecharts() {
       setCategoryData(breakdown.data)
       setCashFlowData(cashFlow.data)
       setMetrics(metricsData.data)
+      
+      // Calculate filtered metrics from forecast data
+      if (forecast.data && forecast.data.length > 0) {
+        const startData = forecast.data[0]
+        const endData = forecast.data[forecast.data.length - 1]
+        const totalIn = forecast.data.reduce((sum, d) => sum + (d.inflow || 0), 0)
+        const totalOut = forecast.data.reduce((sum, d) => sum + (d.outflow || 0), 0)
+        const startBalance = startData.predictedBalance || treasuryBalance.amount
+        const endBalance = endData.predictedBalance || startBalance
+        const change = endBalance - startBalance
+        
+        setFilteredMetrics({
+          balanceAtStart: startBalance,
+          balanceAtEnd: endBalance,
+          totalInflow: totalIn,
+          totalOutflow: totalOut,
+          changeAmount: change,
+          changePercent: startBalance !== 0 ? (change / startBalance) * 100 : 0
+        })
+      }
     } catch (error) {
       console.error('Failed to load analytics, using mock data:', error)
       const baselineBalance = treasuryBalance.amount
       const baselineDate = new Date(treasuryBalance.referenceDate)
 
-      setForecastData(generateMockForecast(baselineBalance, baselineDate))
+      const mockForecast = generateMockForecast(baselineBalance, baselineDate)
+      setForecastData(mockForecast)
       setCategoryData(generateMockCategoryBreakdown())
       setCashFlowData(generateMockCashFlowAnalysis())
       setMetrics(generateMockMetrics(baselineBalance))
+      
+      // Calculate mock filtered metrics
+      if (mockForecast.length > 0) {
+        const startData = mockForecast[0]
+        const endData = mockForecast[mockForecast.length - 1]
+        const totalIn = mockForecast.reduce((sum, d) => sum + (d.inflow || 0), 0)
+        const totalOut = mockForecast.reduce((sum, d) => sum + (d.outflow || 0), 0)
+        const startBalance = startData.predictedBalance || baselineBalance
+        const endBalance = endData.predictedBalance || startBalance
+        const change = endBalance - startBalance
+        
+        setFilteredMetrics({
+          balanceAtStart: startBalance,
+          balanceAtEnd: endBalance,
+          totalInflow: totalIn,
+          totalOutflow: totalOut,
+          changeAmount: change,
+          changePercent: startBalance !== 0 ? (change / startBalance) * 100 : 0
+        })
+      }
     } finally {
       setLoading(false)
     }
-  }, [selectedCompany, treasuryBalance])
+  }, [selectedCompany, treasuryBalance, dateFrom, dateTo])
 
   useEffect(() => {
     if (selectedCompany) {
@@ -148,7 +211,7 @@ export default function AnalyticsRecharts() {
     if (selectedCompany && treasuryBalance) {
       loadAnalytics()
     }
-  }, [selectedCompany, treasuryBalance, loadAnalytics])
+  }, [selectedCompany, treasuryBalance, dateFrom, dateTo, loadAnalytics])
 
   const getDeltaType = (value: number): 'increase' | 'decrease' => {
     return value >= 0 ? 'increase' : 'decrease'
@@ -215,58 +278,139 @@ export default function AnalyticsRecharts() {
         </Card>
       )}
 
-      {/* Key Metrics */}
+      {/* Date Filter - Above Cards */}
       {metrics && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Filtre de période</CardTitle>
+            <CardDescription>Sélectionnez la période pour les analyses ci-dessous</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+                <div className="flex-1">
+                  <Label htmlFor="dateFrom" className="text-sm font-medium text-gray-700 mb-2 block">
+                    Date de début
+                  </Label>
+                  <input
+                    id="dateFrom"
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    min={today}
+                    max={dateTo}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div className="flex-1">
+                  <Label htmlFor="dateTo" className="text-sm font-medium text-gray-700 mb-2 block">
+                    Date de fin
+                  </Label>
+                  <input
+                    id="dateTo"
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    min={dateFrom}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+              
+              {/* Range Slider */}
+              <div className="w-full">
+                <div className="flex justify-between items-center mb-2">
+                  <Label className="text-sm font-medium text-gray-700">
+                    Sélection rapide de période
+                  </Label>
+                  <span className="text-sm font-semibold text-blue-600">
+                    {Math.floor((new Date(dateTo).getTime() - new Date(dateFrom).getTime()) / (1000 * 60 * 60 * 24))} jours sélectionnés
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="365"
+                  value={Math.floor((new Date(dateTo).getTime() - new Date(dateFrom).getTime()) / (1000 * 60 * 60 * 24))}
+                  onChange={(e) => {
+                    const days = parseInt(e.target.value)
+                    const newDateTo = new Date(dateFrom)
+                    newDateTo.setDate(newDateTo.getDate() + days)
+                    setDateTo(newDateTo.toISOString().split('T')[0])
+                  }}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                />
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>0 jour</span>
+                  <span>1 an (365 jours)</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Key Metrics */}
+      {filteredMetrics && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Solde Actuel</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">Solde de départ</CardTitle>
               <DollarSign className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{valueFormatter(metrics.currentBalance)}</div>
-              <p className="text-xs text-gray-500 mt-1">
-                {getDeltaType(metrics.balanceChangePercent30d) === 'increase' ? '↑' : '↓'}{' '}
-                {percentageFormatter(Math.abs(metrics.balanceChangePercent30d))} sur 30j
+              <div className="text-2xl font-bold">{valueFormatter(filteredMetrics.balanceAtStart)}</div>
+              <p className={`text-xs mt-1 font-medium ${
+                getDeltaType(filteredMetrics.changePercent) === 'increase' 
+                  ? 'text-green-600' 
+                  : 'text-red-600'
+              }`}>
+                {getDeltaType(filteredMetrics.changePercent) === 'increase' ? '↑' : '↓'}{' '}
+                {valueFormatter(Math.abs(filteredMetrics.changeAmount))} ({percentageFormatter(Math.abs(filteredMetrics.changePercent))})
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Prévision 30j</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">Prévision fin période</CardTitle>
               <ArrowUpRight className="h-4 w-4 text-emerald-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{valueFormatter(metrics.projectedBalance30d)}</div>
-              <p className="text-xs text-gray-500 mt-1">
-                {valueFormatter(metrics.projectedBalance30d - metrics.currentBalance)} estimé
+              <div className="text-2xl font-bold">{valueFormatter(filteredMetrics.balanceAtEnd)}</div>
+              <p className={`text-xs mt-1 font-medium ${
+                getDeltaType(filteredMetrics.changePercent) === 'increase' 
+                  ? 'text-green-600' 
+                  : 'text-red-600'
+              }`}>
+                {getDeltaType(filteredMetrics.changePercent) === 'increase' ? '↑' : '↓'}{' '}
+                {valueFormatter(Math.abs(filteredMetrics.changeAmount))} ({percentageFormatter(Math.abs(filteredMetrics.changePercent))})
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Entrées 30j</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">Entrées période</CardTitle>
               <TrendingUp className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{valueFormatter(metrics.totalInflow30d)}</div>
+              <div className="text-2xl font-bold">{valueFormatter(filteredMetrics.totalInflow)}</div>
               <p className="text-xs text-gray-500 mt-1">
-                {valueFormatter(metrics.avgDailyInflow)}/jour
+                {valueFormatter(filteredMetrics.totalInflow / Math.max(1, Math.floor((new Date(dateTo).getTime() - new Date(dateFrom).getTime()) / (1000 * 60 * 60 * 24))))}/jour
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Sorties 30j</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">Sorties période</CardTitle>
               <TrendingDown className="h-4 w-4 text-red-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{valueFormatter(metrics.totalOutflow30d)}</div>
+              <div className="text-2xl font-bold">{valueFormatter(filteredMetrics.totalOutflow)}</div>
               <p className="text-xs text-gray-500 mt-1">
-                {valueFormatter(metrics.avgDailyOutflow)}/jour
+                {valueFormatter(filteredMetrics.totalOutflow / Math.max(1, Math.floor((new Date(dateTo).getTime() - new Date(dateFrom).getTime()) / (1000 * 60 * 60 * 24))))}/jour
               </p>
             </CardContent>
           </Card>
@@ -317,8 +461,8 @@ export default function AnalyticsRecharts() {
                   <Legend />
                   <Area
                     type="monotone"
-                    dataKey="actualBalance"
-                    name="Solde réel"
+                    dataKey="baselineBalance"
+                    name="Trésorerie de base"
                     stroke={COLORS.blue}
                     strokeWidth={2}
                     fillOpacity={1}
@@ -327,7 +471,7 @@ export default function AnalyticsRecharts() {
                   <Area
                     type="monotone"
                     dataKey="predictedBalance"
-                    name="Solde prévu"
+                    name="Trésorerie prévue"
                     stroke={COLORS.emerald}
                     strokeWidth={2}
                     fillOpacity={1}
@@ -425,7 +569,7 @@ export default function AnalyticsRecharts() {
                       label={(entry) => `${entry.category}: ${percentageFormatter(entry.percentage)}`}
                       labelLine={true}
                     >
-                      {categoryData.map((entry, index) => (
+                      {categoryData.map((_entry, index) => (
                         <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
                       ))}
                     </Pie>
