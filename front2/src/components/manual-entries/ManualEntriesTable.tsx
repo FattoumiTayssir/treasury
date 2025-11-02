@@ -148,7 +148,6 @@ export function ManualEntriesTable({ entries, isLoading }: ManualEntriesTablePro
               <th className="p-4 text-right font-semibold">Montant</th>
               <th className="p-4 text-left font-semibold">Fréquence</th>
               <th className="p-4 text-left font-semibold">Dates</th>
-              <th className="p-4 text-left font-semibold">Visibilité</th>
               <th className="p-4 text-left font-semibold">Créé par</th>
               <th className="p-4 text-left font-semibold">Actions</th>
             </tr>
@@ -156,7 +155,7 @@ export function ManualEntriesTable({ entries, isLoading }: ManualEntriesTablePro
           <tbody>
             {entries.length === 0 ? (
               <tr>
-                <td colSpan={9} className="p-8 text-center text-muted-foreground">
+                <td colSpan={8} className="p-8 text-center text-muted-foreground">
                   Aucune entrée manuelle trouvée
                 </td>
               </tr>
@@ -196,9 +195,6 @@ export function ManualEntriesTable({ entries, isLoading }: ManualEntriesTablePro
                         </>
                       )}
                     </div>
-                  </td>
-                  <td className="p-4">
-                    <Badge variant="secondary">{entry.visibility}</Badge>
                   </td>
                   <td className="p-4 text-sm">{entry.createdBy}</td>
                   <td className="p-4">

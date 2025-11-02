@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { Layout } from '@/components/layout/Layout'
 import AnalyticsRecharts from '@/pages/AnalyticsRecharts'
+import SimulationAnalytics from '@/pages/SimulationAnalytics'
 import { Movements } from '@/pages/Movements'
 import { ManualEntries } from '@/pages/ManualEntries'
 import { Exceptions } from '@/pages/Exceptions'
@@ -70,6 +71,14 @@ function App() {
                     element={
                       <PermissionRoute tabName="analytics">
                         <AnalyticsRecharts />
+                      </PermissionRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/simulation" 
+                    element={
+                      <PermissionRoute tabName="analytics">
+                        <SimulationAnalytics />
                       </PermissionRoute>
                     } 
                   />

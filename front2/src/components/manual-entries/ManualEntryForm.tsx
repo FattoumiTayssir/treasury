@@ -7,7 +7,7 @@ import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { manualEntriesApi } from '@/services/api'
 import { useToast } from '@/hooks/use-toast'
 import { useDataStore } from '@/store/dataStore'
-import { Category, Sign, Frequency, Visibility, ManualEntry } from '@/types'
+import { Category, Sign, Frequency, ManualEntry } from '@/types'
 import { AlertCircle } from 'lucide-react'
 
 interface ManualEntryFormProps {
@@ -19,7 +19,6 @@ const categories: Category[] = ['RH', 'Achat', 'Vente', 'Compta', 'Autre']
 const types = ['Salaire', 'Charges sociales', 'Achat Local', 'Achat Importation', 'Vente Local', 'Vente Export', 'TVA', 'IS', 'Autre']
 const signs: Sign[] = ['Entrée', 'Sortie']
 const frequencies: Frequency[] = ['Une seule fois', 'Mensuel', 'Annuel', 'Dates personnalisées']
-const visibilities: Visibility[] = ['Public', 'Simulation privée']
 
 export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
   const [formData, setFormData] = useState({
@@ -32,7 +31,6 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
     endDate: '',
     reference: '',
     note: '',
-    visibility: 'Public' as Visibility,
   })
   const [customDates, setCustomDates] = useState<string[]>([])
   const [newDate, setNewDate] = useState('')
@@ -50,8 +48,7 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
     endDate: '',
     customDates: '',
     reference: '',
-    note: '',
-    visibility: ''
+    note: ''
   })
   const { toast } = useToast()
   const { fetchManualEntries, fetchMovements, selectedCompanies } = useDataStore()
@@ -70,7 +67,6 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
         endDate: entry.end_date || '',
         reference: entry.reference || '',
         note: entry.note || '',
-        visibility: entry.visibility,
       })
       // Initialize custom dates if frequency is custom
       if (entry.frequency === 'Dates personnalisées' && entry.custom_dates) {
@@ -210,7 +206,6 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
           custom_dates: formData.frequency === 'Dates personnalisées' ? customDates : undefined,
           reference: formData.reference || undefined,
           note: formData.note || undefined,
-          visibility: formData.visibility,
           status: 'Actif',
         } as any)
 
@@ -233,7 +228,6 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
           custom_dates: formData.frequency === 'Dates personnalisées' ? customDates : undefined,
           reference: formData.reference || undefined,
           note: formData.note || undefined,
-          visibility: formData.visibility,
           status: 'Actif',
         } as any)
 
@@ -529,33 +523,6 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label>Visibilité</Label>
-          <Select
-            value={formData.visibility}
-            onValueChange={(value: Visibility) => {
-              setFormData({ ...formData, visibility: value })
-              setErrors({ ...errors, visibility: '' })
-            }}
-          >
-            <SelectTrigger className={errors.visibility ? 'border-red-500 focus-visible:ring-red-500' : ''}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {visibilities.map((vis) => (
-                <SelectItem key={vis} value={vis}>
-                  {vis}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.visibility && (
-            <div className="flex items-center gap-1 text-sm text-red-600">
-              <AlertCircle className="w-4 h-4" />
-              <span>{errors.visibility}</span>
-            </div>
-          )}
-        </div>
       </div>
 
       <div className="space-y-2">

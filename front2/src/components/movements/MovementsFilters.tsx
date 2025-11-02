@@ -11,7 +11,7 @@ interface MovementsFiltersProps {
 }
 
 const categories = ['Toutes', 'RH', 'Achat', 'Vente', 'Compta', 'Autre']
-const types = ['Tous', 'Salaire', 'Charges sociales', 'Achat Local', 'Achat Importation', 'Vente Local', 'Vente Export', 'TVA', 'IS', 'Autre']
+const types = ['Tous', 'Salaire', 'Charges sociales', 'Achats locaux', 'Achats importation', 'Ventes locales', 'Ventes export', 'TVA', 'IS', 'Autre']
 const sources = ['Toutes', 'Odoo', 'Entrée manuelle']
 
 export function MovementsFilters({ filters, onFiltersChange }: MovementsFiltersProps) {

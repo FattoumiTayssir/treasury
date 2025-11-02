@@ -7,12 +7,14 @@ import {
   Settings,
   Users,
   RefreshCw,
+  Wand2,
 } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { useAuthStore } from '@/store/authStore'
 
 const navigation = [
   { name: 'Analyse', href: '/analytics', icon: BarChart3, tabName: 'analytics' },
+  { name: 'Simulation', href: '/simulation', icon: Wand2, tabName: 'analytics' },
   { name: 'Mouvements', href: '/movements', icon: TrendingUp, tabName: 'movements' },
   { name: 'Entrées manuelles', href: '/manual-entries', icon: Edit3, tabName: 'manual-entries' },
   { name: 'Exceptions', href: '/exceptions', icon: AlertTriangle, tabName: 'exceptions' },

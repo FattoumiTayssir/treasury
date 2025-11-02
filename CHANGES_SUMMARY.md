@@ -1,4 +1,4 @@
-# Changes Summary - User Management Improvements
+# Changes Summary - November 2024 (Updated) Management Improvements
 
 ## 🎯 Issues Fixed
 
