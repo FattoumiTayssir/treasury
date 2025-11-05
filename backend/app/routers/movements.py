@@ -77,14 +77,17 @@ def activate_movements(data: schemas.MovementActivate, db: Session = Depends(get
 @router.post("/exclude-from-analytics")
 def exclude_from_analytics(data: schemas.MovementExcludeFromAnalytics, db: Session = Depends(get_db)):
     """Exclude or include movements from analytics calculations"""
+    updated_count = 0
     for movement_id in data.ids:
         movement = db.query(models.Movement).filter(models.Movement.movement_id == int(movement_id)).first()
         if movement:
             movement.exclude_from_analytics = data.exclude
+            movement.updated_at = datetime.utcnow()
+            updated_count += 1
     
     db.commit()
     action = "excluded from" if data.exclude else "included in"
-    return {"message": f"{len(data.ids)} movements {action} analytics successfully"}
+    return {"message": f"{updated_count} movements {action} analytics successfully"}
 
 @router.post("/refresh")
 def refresh_movements():

@@ -55,16 +55,18 @@ def update_exception_state(data: schemas.ExceptionUpdateState, db: Session = Dep
 @router.post("/exclude-from-analytics")
 def exclude_from_analytics(data: schemas.ExceptionExcludeFromAnalytics, db: Session = Depends(get_db)):
     """Exclude or include exceptions from analytics displays"""
+    updated_count = 0
     for exception_id in data.ids:
         exception = db.query(models.Exception).filter(
             models.Exception.exception_id == int(exception_id)
         ).first()
         if exception:
             exception.exclude_from_analytics = data.exclude
+            updated_count += 1
     
     db.commit()
     action = "excluded from" if data.exclude else "included in"
-    return {"message": f"{len(data.ids)} exceptions {action} analytics successfully"}
+    return {"message": f"{updated_count} exceptions {action} analytics successfully"}
 
 @router.post("/refresh")
 def refresh_exceptions():
@@ -91,5 +93,6 @@ def get_exception(id: str, db: Session = Depends(get_db)):
         reference=exception.reference,
         referenceState=exception.reference_status,
         odooLink=exception.odoo_link,
-        state=exception.status
+        state=exception.status,
+        excludeFromAnalytics=exception.exclude_from_analytics
     )

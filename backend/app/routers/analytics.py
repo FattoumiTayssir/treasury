@@ -115,10 +115,11 @@ def get_forecast(
     baseline_balance = float(treasury_baseline.amount)
     reference_date = treasury_baseline.reference_date
     
-    # Get all active movements
+    # Get all active movements (excluding those marked to exclude from analytics)
     movements = db.query(models.Movement).filter(
         models.Movement.company_id == company_id,
-        models.Movement.status == "Actif"
+        models.Movement.status == "Actif",
+        models.Movement.exclude_from_analytics == False
     ).order_by(models.Movement.movement_date).all()
     
     # Create a dictionary of movements by date
@@ -189,7 +190,8 @@ def get_category_breakdown(
         func.count(models.Movement.movement_id).label("count")
     ).filter(
         models.Movement.company_id == company_id,
-        models.Movement.status == "Actif"
+        models.Movement.status == "Actif",
+        models.Movement.exclude_from_analytics == False
     )
     
     # Apply date filters if provided
@@ -240,10 +242,11 @@ def get_cash_flow_analysis(
     if not treasury_baseline:
         return []
     
-    # Get all active movements
+    # Get all active movements (excluding those marked to exclude from analytics)
     movements = db.query(models.Movement).filter(
         models.Movement.company_id == company_id,
-        models.Movement.status == "Actif"
+        models.Movement.status == "Actif",
+        models.Movement.exclude_from_analytics == False
     ).order_by(models.Movement.movement_date).all()
     
     # Apply date filters to movements if provided

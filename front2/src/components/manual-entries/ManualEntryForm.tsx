@@ -16,7 +16,7 @@ interface ManualEntryFormProps {
 }
 
 const categories: Category[] = ['RH', 'Achat', 'Vente', 'Compta', 'Autre']
-const types = ['Salaire', 'Charges sociales', 'Achat Local', 'Achat Importation', 'Vente Local', 'Vente Export', 'TVA', 'IS', 'Autre']
+const types = ['Salaire', 'Charges sociales', 'Achats locaux avec échéance', 'Achat Importation', 'Ventes locales', 'Ventes export', 'TVA', 'IS', 'Autre']
 const signs: Sign[] = ['Entrée', 'Sortie']
 const frequencies: Frequency[] = ['Une seule fois', 'Mensuel', 'Annuel', 'Dates personnalisées']
 
@@ -100,8 +100,7 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
       endDate: '',
       customDates: '',
       reference: '',
-      note: '',
-      visibility: ''
+      note: ''
     })
 
     // Validate all fields
@@ -206,6 +205,7 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
           custom_dates: formData.frequency === 'Dates personnalisées' ? customDates : undefined,
           reference: formData.reference || undefined,
           note: formData.note || undefined,
+          visibility: 'Public',
           status: 'Actif',
         } as any)
 
@@ -228,6 +228,7 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
           custom_dates: formData.frequency === 'Dates personnalisées' ? customDates : undefined,
           reference: formData.reference || undefined,
           note: formData.note || undefined,
+          visibility: 'Public',
           status: 'Actif',
         } as any)
 
