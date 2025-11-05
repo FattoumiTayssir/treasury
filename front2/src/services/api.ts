@@ -55,6 +55,8 @@ export const manualEntriesApi = {
   delete: (ids: string[]) => api.post('/manual-entries/delete', { ids }),
   deleteAll: () => api.post('/manual-entries/delete-all'),
   getMovements: (id: string) => api.get<FinancialMovement[]>(`/manual-entries/${id}/movements`),
+  checkReference: (reference: string) => 
+    api.post<{ exists: boolean; message: string; nextNumber: number | null }>('/manual-entries/check-reference', { reference }),
 }
 
 // Exceptions

@@ -60,7 +60,6 @@ class Movement(Base):
     reference_status = Column(String(50), nullable=True)
     source = Column(String(30), nullable=False)
     note = Column(Text, nullable=True)
-    visibility = Column(String(30), nullable=False)
     status = Column(String(20), nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     created_by = Column(Integer, ForeignKey("User.user_id"), nullable=False)

@@ -1,15 +1,83 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import func
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from typing import List
-from app.database import get_db
-from app import models, schemas
-from app.auth_utils import get_current_user
+from pydantic import BaseModel
+from .. import models, schemas
+from ..database import get_db
+from ..auth_utils import get_current_user
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import json
 import uuid
 
 router = APIRouter(prefix="/manual-entries", tags=["manual-entries"])
+
+# Schema for reference validation
+class ReferenceCheckRequest(BaseModel):
+    reference: str
+
+class ReferenceCheckResponse(BaseModel):
+    exists: bool
+    message: str
+    nextNumber: int | None = None
+
+@router.post("/check-reference", response_model=ReferenceCheckResponse)
+def check_reference_exists(
+    data: ReferenceCheckRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Check if a reference prefix already exists and return the next available number
+    """
+    reference = data.reference.strip()
+    
+    if not reference:
+        return ReferenceCheckResponse(
+            exists=False,
+            message="",
+            nextNumber=None
+        )
+    
+    # Query existing movements with this reference prefix
+    existing_refs = db.query(models.Movement.reference).filter(
+        models.Movement.reference.like(f"{reference}-%")
+    ).all()
+    
+    if not existing_refs:
+        return ReferenceCheckResponse(
+            exists=False,
+            message=f"La référence '{reference}' est disponible",
+            nextNumber=1
+        )
+    
+    # Extract numbers from references
+    counters = []
+    for ref_tuple in existing_refs:
+        ref = ref_tuple[0]
+        try:
+            parts = ref.split('-')
+            if len(parts) >= 2:
+                counter = int(parts[-1])
+                counters.append(counter)
+        except (ValueError, IndexError):
+            continue
+    
+    if counters:
+        max_counter = max(counters)
+        return ReferenceCheckResponse(
+            exists=True,
+            message=f"La référence '{reference}' existe déjà ({len(counters)} mouvement(s)). Les nouvelles références commenceront à {reference}-{max_counter + 1}",
+            nextNumber=max_counter + 1
+        )
+    
+    return ReferenceCheckResponse(
+        exists=False,
+        message=f"La référence '{reference}' est disponible",
+        nextNumber=1
+    )
 
 @router.get("", response_model=List[schemas.ManualEntryResponse])
 def get_manual_entries(db: Session = Depends(get_db)):
@@ -42,7 +110,6 @@ def get_manual_entries(db: Session = Depends(get_db)):
                 end_date=entry.end_date.isoformat() if entry.end_date else None,
                 custom_dates=custom_dates,
                 note=movement.note,
-                visibility=movement.visibility,
                 status=movement.status,
                 createdBy=movement.creator.display_name if movement.creator else "Système",
                 createdAt=movement.created_at.isoformat() if movement.created_at else "",
@@ -85,7 +152,6 @@ def get_manual_entry(id: str, db: Session = Depends(get_db)):
         end_date=entry.end_date.isoformat() if entry.end_date else None,
         custom_dates=custom_dates,
         note=movement.note,
-        visibility=movement.visibility,
         status=movement.status,
         createdBy=movement.creator.display_name if movement.creator else "",
         createdAt=movement.created_at.isoformat() if movement.created_at else "",
@@ -105,6 +171,32 @@ def create_manual_entry(
     end_date = datetime.strptime(entry.end_date, "%Y-%m-%d").date() if entry.end_date else start_date
     today = datetime.today().date()
     
+    # If reference is provided, find the highest existing counter for this prefix
+    movement_index = 0
+    if entry.reference:
+        # Query existing movements with this reference prefix
+        existing_refs = db.query(models.Movement.reference).filter(
+            models.Movement.reference.like(f"{entry.reference}-%")
+        ).all()
+        
+        if existing_refs:
+            # Extract numbers from references like "RH-1", "RH-2", etc.
+            counters = []
+            for ref_tuple in existing_refs:
+                ref = ref_tuple[0]
+                try:
+                    # Split by '-' and get the last part as number
+                    parts = ref.split('-')
+                    if len(parts) >= 2:
+                        counter = int(parts[-1])
+                        counters.append(counter)
+                except (ValueError, IndexError):
+                    continue
+            
+            if counters:
+                # Start from the highest counter + 1
+                movement_index = max(counters)
+    
     # Create manual entry
     db_entry = models.ManualEntry(
         frequency=entry.frequency,
@@ -118,7 +210,6 @@ def create_manual_entry(
     
     # Generate movements based on frequency and date range
     movements = []
-    movement_index = 0
     
     # Handle custom dates
     if entry.frequency == "Dates personnalisées" and entry.custom_dates:
@@ -146,7 +237,6 @@ def create_manual_entry(
                 reference=unique_ref,
                 source="Entrée manuelle",
                 note=entry.note,
-                visibility=entry.visibility,
                 status=entry.status,
                 created_by=current_user.user_id
             )
@@ -176,7 +266,6 @@ def create_manual_entry(
                 reference=unique_ref,
                 source="Entrée manuelle",
                 note=entry.note,
-                visibility=entry.visibility,
                 status=entry.status,
                 created_by=current_user.user_id
             )
@@ -222,7 +311,6 @@ def create_manual_entry(
         end_date=db_entry.end_date.isoformat() if db_entry.end_date else None,
         custom_dates=custom_dates,
         note=first_movement.note,
-        visibility=first_movement.visibility,
         status=first_movement.status,
         createdBy=first_movement.creator.display_name if first_movement.creator else "Système",
         createdAt=first_movement.created_at.isoformat(),
@@ -259,8 +347,6 @@ def update_manual_entry(id: str, entry: schemas.ManualEntryUpdate, db: Session =
             movement.sign = entry.sign
         if entry.note is not None:
             movement.note = entry.note
-        if entry.visibility:
-            movement.visibility = entry.visibility
         if entry.status:
             movement.status = entry.status
         if entry.reference:
@@ -285,7 +371,6 @@ def update_manual_entry(id: str, entry: schemas.ManualEntryUpdate, db: Session =
         frequency=db_entry.frequency,
         dates=db_entry.dates_list if isinstance(db_entry.dates_list, list) else [],
         note=movement.note,
-        visibility=movement.visibility,
         status=movement.status,
         createdBy=movement.creator.display_name if movement.creator else "",
         createdAt=movement.created_at.isoformat(),
@@ -344,7 +429,6 @@ def get_manual_entry_movements(id: str, db: Session = Depends(get_db)):
             odooLink=m.odoo_link,
             source=m.source,
             note=m.note,
-            visibility=m.visibility,
             status=m.status,
             createdBy=m.creator.display_name if m.creator else "Système",
             createdAt=m.created_at.isoformat() if m.created_at else None,

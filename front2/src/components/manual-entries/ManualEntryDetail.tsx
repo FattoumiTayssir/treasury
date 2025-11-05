@@ -53,11 +53,6 @@ export function ManualEntryDetail({ open, onClose, entry }: ManualEntryDetailPro
             </div>
             
             <div>
-              <p className="text-sm text-gray-500">Visibilité</p>
-              <p className="font-medium">{entry.visibility}</p>
-            </div>
-            
-            <div>
               <p className="text-sm text-gray-500">Statut</p>
               <Badge variant={entry.status === 'Actif' ? 'default' : 'secondary'}>
                 {entry.status}

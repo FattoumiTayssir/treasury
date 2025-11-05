@@ -53,11 +53,6 @@ export function SimulationMovementDetail({ open, onClose, movement }: Simulation
             </div>
             
             <div>
-              <p className="text-sm text-gray-500">Visibilité</p>
-              <p className="font-medium">{movement.visibility || 'Simulation privée'}</p>
-            </div>
-            
-            <div>
               <p className="text-sm text-gray-500">Date de début</p>
               <p className="font-medium">{new Date(movement.startDate).toLocaleDateString('fr-FR')}</p>
             </div>

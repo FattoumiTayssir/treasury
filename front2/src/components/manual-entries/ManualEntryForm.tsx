@@ -36,6 +36,11 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
   const [newDate, setNewDate] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showUpdateConfirm, setShowUpdateConfirm] = useState(false)
+  const [referenceValidation, setReferenceValidation] = useState<{
+    message: string
+    exists: boolean
+    nextNumber: number | null
+  } | null>(null)
   
   // Validation errors
   const [errors, setErrors] = useState({
@@ -74,6 +79,29 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
       }
     }
   }, [entry])
+
+  // Check reference when it changes (with debounce)
+  useEffect(() => {
+    const checkReference = async () => {
+      if (formData.reference && formData.reference.trim()) {
+        try {
+          const response = await manualEntriesApi.checkReference(formData.reference.trim())
+          setReferenceValidation(response.data)
+        } catch (error) {
+          console.error('Error checking reference:', error)
+        }
+      } else {
+        setReferenceValidation(null)
+      }
+    }
+
+    // Debounce - wait 500ms after user stops typing
+    const timeoutId = setTimeout(() => {
+      checkReference()
+    }, 500)
+
+    return () => clearTimeout(timeoutId)
+  }, [formData.reference])
 
   const addCustomDate = () => {
     if (newDate && !customDates.includes(newDate)) {
@@ -205,7 +233,6 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
           custom_dates: formData.frequency === 'Dates personnalisées' ? customDates : undefined,
           reference: formData.reference || undefined,
           note: formData.note || undefined,
-          visibility: 'Public',
           status: 'Actif',
         } as any)
 
@@ -228,7 +255,6 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
           custom_dates: formData.frequency === 'Dates personnalisées' ? customDates : undefined,
           reference: formData.reference || undefined,
           note: formData.note || undefined,
-          visibility: 'Public',
           status: 'Actif',
         } as any)
 
@@ -520,6 +546,14 @@ export function ManualEntryForm({ entry, onClose }: ManualEntryFormProps) {
             <div className="flex items-center gap-1 text-sm text-red-600">
               <AlertCircle className="w-4 h-4" />
               <span>{errors.reference}</span>
+            </div>
+          )}
+          {referenceValidation && referenceValidation.message && (
+            <div className={`flex items-center gap-1 text-sm ${
+              referenceValidation.exists ? 'text-amber-600' : 'text-blue-600'
+            }`}>
+              <AlertCircle className="w-4 h-4" />
+              <span>{referenceValidation.message}</span>
             </div>
           )}
         </div>

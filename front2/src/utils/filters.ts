@@ -70,10 +70,6 @@ export const applyMovementFilters = (
       )
     }
 
-    if (filters.visibility && filters.visibility.length > 0) {
-      checks.push(filters.visibility.includes(movement.visibility))
-    }
-
     if (filters.status && filters.status.length > 0) {
       checks.push(filters.status.includes(movement.status))
     }
@@ -125,10 +121,6 @@ export const applyManualEntryFilters = (
 
     if (filters.frequency && filters.frequency.length > 0) {
       checks.push(filters.frequency.includes(entry.frequency))
-    }
-
-    if (filters.visibility && filters.visibility.length > 0) {
-      checks.push(filters.visibility.includes(entry.visibility))
     }
 
     if (filters.referenceType && filters.referenceType.length > 0) {

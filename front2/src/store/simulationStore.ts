@@ -14,7 +14,6 @@ export interface SimulationMovement {
   reference?: string
   referenceType?: string
   note?: string
-  visibility?: string  // Optional for simulation
   // Generated dates for display
   generatedDates?: string[]
 }

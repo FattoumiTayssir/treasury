@@ -1,7 +1,6 @@
 export type Category = 'RH' | 'Achat' | 'Vente' | 'Compta' | 'Autre'
 export type Sign = 'Entrée' | 'Sortie'
 export type Source = 'Odoo' | 'Entrée manuelle'
-export type Visibility = 'Public' | 'Simulation privée' | 'Tout'
 export type Status = 'Actif' | 'Désactivé'
 export type Frequency = 'Une seule fois' | 'Mensuel' | 'Annuel' | 'Dates personnalisées'
 export type ReferenceType =
@@ -39,7 +38,6 @@ export interface FinancialMovement {
   odooLink?: string
   source: Source
   note?: string
-  visibility: Visibility
   status: Status
   createdBy?: string
   createdAt?: string
@@ -65,7 +63,6 @@ export interface ManualEntry {
   end_date?: string
   custom_dates?: string[]
   note?: string
-  visibility: Visibility
   status: Status
   createdBy: string
   createdAt: string
@@ -157,7 +154,6 @@ export interface MovementFilters {
   referenceType?: ReferenceType[]
   reference?: string
   referenceState?: string[]
-  visibility?: Visibility[]
   status?: Status[]
   logic: 'ET' | 'OU'
 }
@@ -172,7 +168,6 @@ export interface ManualEntryFilters {
   amountMin?: number
   amountMax?: number
   frequency?: Frequency[]
-  visibility?: Visibility[]
   referenceType?: ReferenceType[]
   reference?: string
   referenceState?: string[]

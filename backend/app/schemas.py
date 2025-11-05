@@ -7,7 +7,6 @@ from decimal import Decimal
 CategoryType = str  # 'RH', 'Achat', 'Vente', 'Compta', 'Autre'
 SignType = str  # 'Entrée', 'Sortie'
 SourceType = str  # 'Odoo', 'Entrée manuelle'
-VisibilityType = str  # 'Public', 'Hors simulation', 'Privée'
 StatusType = str  # 'Actif', 'Désactivé'
 FrequencyType = str  # 'Une fois', 'Mensuel', 'Annuel'
 ReferenceTypeEnum = str
@@ -101,7 +100,6 @@ class MovementBase(BaseModel):
     reference_status: Optional[str] = None
     source: SourceType
     note: Optional[str] = None
-    visibility: VisibilityType
     status: StatusType
 
 class MovementCreate(MovementBase):
@@ -121,7 +119,6 @@ class MovementResponse(BaseModel):
     odooLink: Optional[str] = None
     source: SourceType
     note: Optional[str] = None
-    visibility: VisibilityType
     status: StatusType
     createdBy: Optional[str] = None
     createdAt: Optional[str] = None
@@ -158,7 +155,6 @@ class ManualEntryBase(BaseModel):
     start_date: str
     end_date: Optional[str] = None
     note: Optional[str] = None
-    visibility: VisibilityType
     status: StatusType = "Actif"
 
 class ManualEntryCreate(ManualEntryBase):
@@ -175,7 +171,6 @@ class ManualEntryUpdate(BaseModel):
     frequency: Optional[FrequencyType] = None
     dates: Optional[List[str]] = None
     note: Optional[str] = None
-    visibility: Optional[VisibilityType] = None
     status: Optional[StatusType] = None
 
 class ManualEntryResponse(BaseModel):
@@ -192,7 +187,6 @@ class ManualEntryResponse(BaseModel):
     end_date: Optional[str] = None
     custom_dates: Optional[List[str]] = None
     note: Optional[str] = None
-    visibility: VisibilityType
     status: StatusType
     createdBy: str
     createdAt: str
