@@ -25,13 +25,18 @@ export interface SimulationState {
   movements: SimulationMovement[]
   createdAt: string
   updatedAt: string
+  createdBy: string  // User ID who created the simulation
 }
 
 interface SimulationStore {
   simulations: Record<string, SimulationState>
   activeSimulationId: string | null
+  currentUserId: string | null  // Track current user
   
   // Actions
+  setCurrentUser: (userId: string | null) => void
+  clearAllData: () => void  // Clear all simulations
+  getUserSimulations: () => Record<string, SimulationState>  // Get simulations for current user
   createSimulation: (name: string, description?: string) => void
   deleteSimulation: (id: string) => void
   setActiveSimulation: (id: string) => void
@@ -79,8 +84,33 @@ function generateDates(movement: Omit<SimulationMovement, 'id' | 'generatedDates
 export const useSimulationStore = create<SimulationStore>((set, get) => ({
   simulations: {},
   activeSimulationId: null,
+  currentUserId: null,
+  
+  setCurrentUser: (userId: string | null) => {
+    set({ currentUserId: userId })
+  },
+  
+  clearAllData: () => {
+    set({ simulations: {}, activeSimulationId: null })
+  },
+  
+  getUserSimulations: () => {
+    const { simulations, currentUserId } = get()
+    if (!currentUserId) return {}
+    
+    // Filter simulations to only show ones created by current user
+    return Object.fromEntries(
+      Object.entries(simulations).filter(([_, sim]) => sim.createdBy === currentUserId)
+    )
+  },
   
   createSimulation: (name: string, description = '') => {
+    const { currentUserId } = get()
+    if (!currentUserId) {
+      console.error('Cannot create simulation: no user logged in')
+      return
+    }
+    
     const id = `sim_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     const newSimulation: SimulationState = {
       name,
@@ -88,6 +118,7 @@ export const useSimulationStore = create<SimulationStore>((set, get) => ({
       movements: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      createdBy: currentUserId,
     }
     
     set((state) => ({
@@ -110,7 +141,15 @@ export const useSimulationStore = create<SimulationStore>((set, get) => ({
   },
   
   setActiveSimulation: (id: string) => {
-    set({ activeSimulationId: id })
+    const { simulations, currentUserId } = get()
+    const simulation = simulations[id]
+    
+    // Only allow setting active simulation if it belongs to current user
+    if (simulation && simulation.createdBy === currentUserId) {
+      set({ activeSimulationId: id })
+    } else {
+      console.warn('Cannot access simulation: not owned by current user')
+    }
   },
   
   getActiveSimulation: () => {
@@ -218,6 +257,12 @@ export const useSimulationStore = create<SimulationStore>((set, get) => ({
   },
   
   importSimulation: (data: SimulationState) => {
+    const { currentUserId } = get()
+    if (!currentUserId) {
+      console.error('Cannot import simulation: no user logged in')
+      return
+    }
+    
     const id = `sim_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     set((state) => ({
       simulations: {
@@ -226,6 +271,7 @@ export const useSimulationStore = create<SimulationStore>((set, get) => ({
           ...data,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          createdBy: currentUserId,  // Assign to current user
         },
       },
       activeSimulationId: id,

@@ -28,6 +28,7 @@ import { SimulationMovementForm } from '@/components/simulation/SimulationMoveme
 import { SimulationMovementDetail } from '@/components/simulation/SimulationMovementDetail'
 import { analyticsApi, treasuryApi } from '@/services/api'
 import { useDataStore } from '@/store/dataStore'
+import { useAuthStore } from '@/store/authStore'
 import type { TreasuryBalance } from '@/types'
 
 const COLORS = {
@@ -41,7 +42,6 @@ export default function SimulationAnalytics() {
   const selectedCompany = selectedCompanies[0] || ''
   const [treasuryBalance, setTreasuryBalance] = useState<TreasuryBalance | null>(null)
   const { 
-    simulations, 
     activeSimulationId,
     createSimulation,
     deleteSimulation,
@@ -53,7 +53,12 @@ export default function SimulationAnalytics() {
     getActiveSimulation,
     getActiveMovements,
     getAllGeneratedMovements,
+    getUserSimulations,
+    setCurrentUser,
   } = useSimulationStore()
+  
+  // Get only simulations for current user
+  const userSimulations = getUserSimulations()
   
   const [forecastData, setForecastData] = useState<any[]>([])
   
@@ -248,6 +253,14 @@ export default function SimulationAnalytics() {
     }
   }, [selectedCompany, treasuryBalance, activeSimulationId, activeSimulation?.updatedAt])
   
+  // Set current user when component mounts or user changes
+  useEffect(() => {
+    const { user } = useAuthStore.getState()
+    if (user?.id) {
+      setCurrentUser(user.id)
+    }
+  }, [setCurrentUser])
+  
   useEffect(() => {
     loadTreasuryBalance()
   }, [selectedCompany, loadTreasuryBalance])
@@ -349,7 +362,7 @@ export default function SimulationAnalytics() {
       </div>
       
       {/* Create Simulation */}
-      {!activeSimulationId && Object.keys(simulations).length === 0 && (
+      {!activeSimulationId && Object.keys(userSimulations).length === 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Créer une nouvelle simulation</CardTitle>
@@ -388,7 +401,7 @@ export default function SimulationAnalytics() {
       )}
       
       {/* Simulation List & Selector */}
-      {Object.keys(simulations).length > 0 && (
+      {Object.keys(userSimulations).length > 0 && (
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
@@ -409,7 +422,7 @@ export default function SimulationAnalytics() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Object.entries(simulations).map(([id, sim]) => (
+              {Object.entries(userSimulations).map(([id, sim]) => (
                 <div
                   key={id}
                   className={`p-4 border rounded-lg cursor-pointer transition-colors ${

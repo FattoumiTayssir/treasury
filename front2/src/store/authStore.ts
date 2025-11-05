@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { User } from '@/types'
 import { authApi } from '@/services/api'
+import { useSimulationStore } from './simulationStore'
 
 interface AuthState {
   user: User | null
@@ -33,11 +34,17 @@ export const useAuthStore = create<AuthState>()(
         const response = await authApi.login(email, password)
         set({ user: response.data.user, token: response.data.token })
         localStorage.setItem('auth_token', response.data.token)
+        
+        // Set current user in simulation store
+        useSimulationStore.getState().setCurrentUser(response.data.user.id)
       },
       windowsLogin: async () => {
         const response = await authApi.windowsLogin()
         set({ user: response.data.user, token: response.data.token })
         localStorage.setItem('auth_token', response.data.token)
+        
+        // Set current user in simulation store
+        useSimulationStore.getState().setCurrentUser(response.data.user.id)
       },
       logout: async () => {
         try {
@@ -46,6 +53,11 @@ export const useAuthStore = create<AuthState>()(
           // Continue with logout even if API call fails
           console.error('Logout error:', error)
         }
+        
+        // Clear simulation data before logout
+        useSimulationStore.getState().clearAllData()
+        useSimulationStore.getState().setCurrentUser(null)
+        
         set({ user: null, token: null })
         localStorage.removeItem('auth_token')
       },
