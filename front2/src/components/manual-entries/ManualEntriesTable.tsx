@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { formatCurrency, formatDate } from '@/utils/formatters'
-import { Edit, Trash2, Trash } from 'lucide-react'
+import { Edit, Trash2, Trash, Eye } from 'lucide-react'
 import { manualEntriesApi } from '@/services/api'
 import { useToast } from '@/hooks/use-toast'
 import { useDataStore } from '@/store/dataStore'
 import { ManualEntryForm } from './ManualEntryForm'
+import { ManualEntryDetail } from './ManualEntryDetail'
 
 interface ManualEntriesTableProps {
   entries: ManualEntry[]
@@ -21,6 +22,7 @@ interface ManualEntriesTableProps {
 export function ManualEntriesTable({ entries, isLoading }: ManualEntriesTableProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [editingEntry, setEditingEntry] = useState<ManualEntry | null>(null)
+  const [viewingEntry, setViewingEntry] = useState<ManualEntry | null>(null)
   const [deletingIds, setDeletingIds] = useState<string[]>([])
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false)
@@ -202,6 +204,14 @@ export function ManualEntriesTable({ entries, isLoading }: ManualEntriesTablePro
                       <Button
                         variant="ghost"
                         size="icon"
+                        onClick={() => setViewingEntry(entry)}
+                        title="Voir détails"
+                      >
+                        <Eye className="w-4 h-4 text-blue-600" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => setEditingEntry(entry)}
                         title="Modifier"
                       >
@@ -224,6 +234,13 @@ export function ManualEntriesTable({ entries, isLoading }: ManualEntriesTablePro
         </table>
       </div>
     </Card>
+
+    {/* View Detail Dialog */}
+    <ManualEntryDetail
+      open={!!viewingEntry}
+      onClose={() => setViewingEntry(null)}
+      entry={viewingEntry}
+    />
 
     {/* Edit Dialog */}
     <Dialog open={!!editingEntry} onOpenChange={(open) => !open && setEditingEntry(null)}>

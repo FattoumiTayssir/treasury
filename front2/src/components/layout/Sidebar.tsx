@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
   BarChart3,
@@ -8,6 +9,8 @@ import {
   Users,
   RefreshCw,
   Wand2,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { useAuthStore } from '@/store/authStore'
@@ -29,6 +32,7 @@ const adminNavigation = [
 export function Sidebar() {
   const location = useLocation()
   const { hasPermission, isAdmin } = useAuthStore()
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true)
 
   // Filter navigation items based on permissions
   const visibleNavigation = navigation.filter(item => 
@@ -36,11 +40,24 @@ export function Sidebar() {
   )
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-      <div className="p-6 border-b border-gray-200">
-        <h1 className="text-2xl font-bold text-primary">Tabtré App</h1>
-        <p className="text-sm text-muted-foreground mt-1">Gestion de Trésorerie</p>
-      </div>
+    <>
+      {/* Toggle Button - Always visible */}
+      <button
+        onClick={() => setIsSidebarVisible(!isSidebarVisible)}
+        className="fixed left-0 top-1/2 -translate-y-1/2 z-50 bg-white border border-gray-200 rounded-r-lg shadow-lg p-2 hover:bg-gray-50 transition-all"
+        style={{ left: isSidebarVisible ? '256px' : '0px' }}
+        title={isSidebarVisible ? "Masquer le menu" : "Afficher le menu"}
+      >
+        {isSidebarVisible ? <ChevronLeft className="w-4 h-4 text-gray-600" /> : <ChevronRight className="w-4 h-4 text-gray-600" />}
+      </button>
+
+      {/* Sidebar */}
+      {isSidebarVisible && (
+        <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
+          <div className="p-6 border-b border-gray-200">
+            <h1 className="text-2xl font-bold text-primary">Tabtré App</h1>
+            <p className="text-sm text-muted-foreground mt-1">Gestion de Trésorerie</p>
+          </div>
       
       <nav className="flex-1 p-4 space-y-1">
         {visibleNavigation.map((item) => {
@@ -91,6 +108,8 @@ export function Sidebar() {
           </>
         )}
       </nav>
-    </div>
+        </div>
+      )}
+    </>
   )
 }

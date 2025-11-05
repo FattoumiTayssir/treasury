@@ -31,7 +31,7 @@ export function SimulationMovementForm({ open, onClose, onSubmit, movement, onUp
   const [formData, setFormData] = useState({
     category: 'Autre' as Category,
     type: '',
-    amount: 0,
+    amount: '' as any,
     sign: 'Entrée' as Sign,
     frequency: 'Une seule fois' as Frequency,
     startDate: new Date().toISOString().split('T')[0],
@@ -160,7 +160,8 @@ export function SimulationMovementForm({ open, onClose, onSubmit, movement, onUp
                 step="0.001"
                 min="0"
                 value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
+                onChange={(e) => setFormData({ ...formData, amount: e.target.value === '' ? '' : parseFloat(e.target.value) })}
+                placeholder="0.000"
                 required
               />
             </div>

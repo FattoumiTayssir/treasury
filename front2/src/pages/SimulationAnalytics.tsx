@@ -56,7 +56,6 @@ export default function SimulationAnalytics() {
   } = useSimulationStore()
   
   const [forecastData, setForecastData] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
   
   // Simulation info
   const [simulationName, setSimulationName] = useState('')
@@ -123,6 +122,10 @@ export default function SimulationAnalytics() {
     // Calculate old variation from totals
     const oldChange = oldTotalIn - oldTotalOut
     
+    // Calculate balance change from baseline to simulation
+    const balanceEndChange = endBalance - oldEndBalance
+    const balanceEndChangePercent = oldEndBalance !== 0 ? (balanceEndChange / oldEndBalance) * 100 : 0
+    
     return {
       // New values
       balanceAtStart: startBalance,
@@ -139,6 +142,10 @@ export default function SimulationAnalytics() {
       oldTotalOutflow: oldTotalOut,
       oldChangeAmount: oldChange,
       oldChangePercent: oldStartBalance !== 0 ? (oldChange / oldStartBalance) * 100 : 0,
+      
+      // Balance change metrics (baseline → simulation)
+      balanceEndChange: balanceEndChange,
+      balanceEndChangePercent: balanceEndChangePercent,
     }
   }, [filteredForecastData, treasuryBalance])
   
@@ -169,7 +176,6 @@ export default function SimulationAnalytics() {
   const loadSimulationAnalytics = useCallback(async () => {
     if (!selectedCompany || !treasuryBalance) return
     
-    setLoading(true)
     try {
       // Get base forecast
       const forecast = await analyticsApi.getForecast({
@@ -239,8 +245,6 @@ export default function SimulationAnalytics() {
       setForecastData(baseData)
     } catch (error) {
       console.error('Failed to load simulation analytics:', error)
-    } finally {
-      setLoading(false)
     }
   }, [selectedCompany, treasuryBalance, activeSimulationId, activeSimulation?.updatedAt])
   
@@ -624,9 +628,9 @@ export default function SimulationAnalytics() {
                       <span className="text-lg sm:text-2xl font-bold truncate">{valueFormatter(filteredMetrics.balanceAtEnd)}</span>
                     </div>
                     <p className={`text-xs mt-1 font-medium ${
-                      filteredMetrics.changePercent >= 0 ? 'text-green-600' : 'text-red-600'
+                      filteredMetrics.balanceEndChange >= 0 ? 'text-green-600' : 'text-red-600'
                     }`}>
-                      {filteredMetrics.changePercent >= 0 ? '↑' : '↓'} {valueFormatter(Math.abs(filteredMetrics.changeAmount))} ({percentageFormatter(Math.abs(filteredMetrics.changePercent))})
+                      {filteredMetrics.balanceEndChange >= 0 ? '↑' : '↓'} {valueFormatter(Math.abs(filteredMetrics.balanceEndChange))} ({percentageFormatter(Math.abs(filteredMetrics.balanceEndChangePercent))})
                     </p>
                   </CardContent>
                 </Card>
@@ -742,7 +746,18 @@ export default function SimulationAnalytics() {
                         <div className="grid grid-cols-3 gap-4 text-sm">
                           <div>Solde final</div>
                           <div className="text-right text-gray-600">{valueFormatter(filteredMetrics.oldBalanceAtEnd)}</div>
-                          <div className="text-right font-semibold">{valueFormatter(filteredMetrics.balanceAtEnd)}</div>
+                          <div className="text-right">
+                            <div className={`font-semibold ${
+                              filteredMetrics.balanceEndChange >= 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {valueFormatter(filteredMetrics.balanceAtEnd)}
+                            </div>
+                            <div className={`text-xs mt-1 ${
+                              filteredMetrics.balanceEndChange >= 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {filteredMetrics.balanceEndChange >= 0 ? '↑' : '↓'} {valueFormatter(Math.abs(filteredMetrics.balanceEndChange))} ({percentageFormatter(Math.abs(filteredMetrics.balanceEndChangePercent))})
+                            </div>
+                          </div>
                         </div>
                         <div className="grid grid-cols-3 gap-4 text-sm">
                           <div>Total entrées</div>
