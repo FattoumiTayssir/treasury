@@ -9,6 +9,7 @@ interface AuthState {
   setUser: (user: User | null) => void
   setToken: (token: string | null) => void
   login: (email: string, password: string) => Promise<void>
+  windowsLogin: () => Promise<void>
   logout: () => void
   hasPermission: (tabName: string, requireModify?: boolean) => boolean
   isAdmin: () => boolean
@@ -30,6 +31,11 @@ export const useAuthStore = create<AuthState>()(
       },
       login: async (email: string, password: string) => {
         const response = await authApi.login(email, password)
+        set({ user: response.data.user, token: response.data.token })
+        localStorage.setItem('auth_token', response.data.token)
+      },
+      windowsLogin: async () => {
+        const response = await authApi.windowsLogin()
         set({ user: response.data.user, token: response.data.token })
         localStorage.setItem('auth_token', response.data.token)
       },

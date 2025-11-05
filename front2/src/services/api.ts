@@ -121,6 +121,8 @@ export const companiesApi = {
 export const authApi = {
   login: (email: string, password: string) =>
     api.post<{ token: string; user: User }>('/auth/login', { email, password }),
+  windowsLogin: () =>
+    api.post<{ token: string; user: User }>('/auth/windows-login'),
   logout: () => api.post('/auth/logout'),
   refreshToken: () => api.post<{ token: string }>('/auth/refresh'),
 }

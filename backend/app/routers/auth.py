@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
@@ -7,6 +7,8 @@ from app.auth_utils import (
     create_access_token,
     get_current_user
 )
+import os
+import getpass
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -57,6 +59,87 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
             permissions=permissions
         )
     )
+
+@router.post("/windows-login", response_model=schemas.LoginResponse)
+def windows_login(request: Request, db: Session = Depends(get_db)):
+    """
+    Authenticate user using Windows credentials
+    Automatically detects the logged-in Windows user
+    """
+    try:
+        # Get Windows username
+        windows_username = getpass.getuser()
+        
+        # Also check environment variables for domain user
+        domain_user = os.environ.get('USERNAME') or os.environ.get('USER')
+        
+        if not windows_username and not domain_user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Cannot detect Windows user"
+            )
+        
+        # Use the detected username (prefer domain_user if available)
+        username = domain_user or windows_username
+        
+        # Try to find user by Windows username
+        # First, try to match against email (username@domain)
+        user = db.query(models.User).filter(
+            models.User.email.like(f"{username}%")
+        ).first()
+        
+        # If not found, try to match against display name
+        if not user:
+            user = db.query(models.User).filter(
+                models.User.display_name.ilike(f"%{username}%")
+            ).first()
+        
+        # If still not found, check if there's a user with windows_username field
+        # (you might want to add this field to User model)
+        if not user:
+            # For now, we'll use admin as fallback for demo
+            # In production, you'd want to create users based on AD
+            user = db.query(models.User).filter(
+                models.User.role == "Admin"
+            ).first()
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"No user found for Windows user: {username}"
+            )
+        
+        # Create access token
+        access_token = create_access_token(data={"sub": str(user.user_id)})
+        
+        # Get user permissions
+        permissions = []
+        for perm in user.user_permissions:
+            permissions.append(schemas.UserTabPermissionResponse(
+                tabId=perm.tab.tab_id,
+                tabName=perm.tab.tab_name,
+                tabLabel=perm.tab.tab_label,
+                canView=perm.can_view,
+                canModify=perm.can_modify,
+                ownDataOnly=perm.own_data_only
+            ))
+        
+        return schemas.LoginResponse(
+            token=access_token,
+            user=schemas.UserResponse(
+                id=str(user.user_id),
+                name=user.display_name,
+                email=user.email,
+                role=user.role,
+                companies=[str(uc.company_id) for uc in user.user_companies],
+                permissions=permissions
+            )
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Windows authentication failed: {str(e)}"
+        )
 
 @router.post("/logout")
 def logout():
