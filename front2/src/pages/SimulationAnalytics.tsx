@@ -106,18 +106,22 @@ export default function SimulationAnalytics() {
     const totalOut = filteredForecastData.reduce((sum: number, d: any) => sum + (d.outflow || 0), 0)
     const startBalance = startData.predictedBalance || treasuryBalance.amount
     const endBalance = endData.predictedBalance || startBalance
-    const change = endBalance - startBalance
+    
+    // Calculate variation from totals (more accurate than balance difference)
+    const change = totalIn - totalOut
     
     // Old (baseline without simulation)
     const oldStartBalance = startData.baselineBalance || startBalance
     const oldEndBalance = endData.baselineBalance || endBalance
-    const oldChange = oldEndBalance - oldStartBalance
     
     // Calculate baseline inflow/outflow (original values before simulation)
     const totalSimInflow = filteredForecastData.reduce((sum: number, d: any) => sum + (d.simulationInflow || 0), 0)
     const totalSimOutflow = filteredForecastData.reduce((sum: number, d: any) => sum + (d.simulationOutflow || 0), 0)
     const oldTotalIn = totalIn - totalSimInflow
     const oldTotalOut = totalOut - totalSimOutflow
+    
+    // Calculate old variation from totals
+    const oldChange = oldTotalIn - oldTotalOut
     
     return {
       // New values
@@ -203,20 +207,25 @@ export default function SimulationAnalytics() {
           
           // Calculate the net change from simulation on this date
           const simulationImpact = additionalInflow - additionalOutflow
+          
+          // Store the baseline BEFORE adding this date's simulation impact
+          const originalPredictedBalance = item.predictedBalance
+          
+          // Update cumulative delta AFTER storing baseline
           cumulativeDelta += simulationImpact
           
-          // New balance = baseline balance + cumulative simulation impact
-          const baselineBalance = item.predictedBalance
-          const newBalance = baselineBalance + cumulativeDelta
+          // New balance = original predicted balance (from API) + cumulative simulation impact
+          const newBalance = originalPredictedBalance + cumulativeDelta
           
           return {
             ...item,
-            baselineBalance: baselineBalance, // Keep original for comparison
+            baselineBalance: originalPredictedBalance, // Original API forecast without ANY simulation
             inflow: (item.inflow || 0) + additionalInflow,
             outflow: (item.outflow || 0) + additionalOutflow,
-            predictedBalance: newBalance,
+            predictedBalance: newBalance, // New balance WITH simulation
             simulationInflow: additionalInflow,
             simulationOutflow: additionalOutflow,
+            cumulativeSimulationDelta: cumulativeDelta, // For debugging
           }
         })
       } else {
