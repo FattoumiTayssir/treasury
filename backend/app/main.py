@@ -11,7 +11,8 @@ from app.routers import (
     dashboard,
     odoo,
     analytics,
-    data_refresh
+    data_refresh,
+    supervision
 )
 
 app = FastAPI(
@@ -41,6 +42,7 @@ app.include_router(dashboard.router)
 app.include_router(odoo.router)
 app.include_router(analytics.router)
 app.include_router(data_refresh.router)
+app.include_router(supervision.router)
 
 @app.get("/")
 def root():

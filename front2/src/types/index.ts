@@ -230,6 +230,26 @@ export interface TreasuryMetrics {
   balanceChangePercent30d: number
 }
 
+export interface SupervisionLog {
+  logId: number
+  entityType: 'movement' | 'manual_entry' | 'data_refresh'
+  entityId?: number
+  action: string
+  userId: number
+  userName: string
+  timestamp: string
+  details?: Record<string, any>
+  description?: string
+  companyId?: number
+}
+
+export interface SupervisionStats {
+  totalLogs: number
+  logsByEntity: Array<{ entityType: string; count: number }>
+  logsByAction: Array<{ action: string; count: number }>
+  topUsers: Array<{ userName: string; count: number }>
+}
+
 export interface AnalyticsFilters {
   dateFrom?: string
   dateTo?: string

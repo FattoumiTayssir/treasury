@@ -10,6 +10,7 @@ import { UserManagement } from '@/pages/UserManagement'
 import { PasswordChange } from '@/pages/Settings/PasswordChange'
 import DataRefresh from '@/pages/DataRefresh'
 import { Login } from '@/pages/Login'
+import { Supervision } from '@/pages/Supervision'
 import { useAuthStore } from '@/store/authStore'
 import { Toaster } from '@/components/ui/toaster'
 
@@ -127,6 +128,14 @@ function App() {
                     element={
                       <PermissionRoute adminOnly>
                         <DataRefresh />
+                      </PermissionRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/supervision" 
+                    element={
+                      <PermissionRoute adminOnly>
+                        <Supervision />
                       </PermissionRoute>
                     } 
                   />

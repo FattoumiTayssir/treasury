@@ -221,3 +221,31 @@ class DataRefreshExecution(Base):
         CheckConstraint("status IN ('running', 'completed', 'failed', 'cancelled')", name="CK_data_refresh_status"),
         CheckConstraint("progress_percentage >= 0 AND progress_percentage <= 100", name="CK_data_refresh_progress"),
     )
+
+class SupervisionLog(Base):
+    __tablename__ = "supervision_log"
+    
+    log_id = Column(Integer, primary_key=True, index=True)
+    entity_type = Column(String(50), nullable=False)
+    entity_id = Column(Integer, nullable=True)
+    action = Column(String(50), nullable=False)
+    user_id = Column(Integer, ForeignKey("User.user_id", ondelete="CASCADE"), nullable=False)
+    user_name = Column(String(120), nullable=False)
+    timestamp = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+    details = Column(JSON, nullable=True)
+    description = Column(Text, nullable=True)
+    company_id = Column(Integer, ForeignKey("company.company_id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+    
+    user = relationship("User", foreign_keys=[user_id])
+    company = relationship("Company", foreign_keys=[company_id])
+    
+    __table_args__ = (
+        Index("IX_supervision_log_entity", "entity_type", "entity_id"),
+        Index("IX_supervision_log_user", "user_id"),
+        Index("IX_supervision_log_timestamp", "timestamp"),
+        Index("IX_supervision_log_action", "action"),
+        Index("IX_supervision_log_company", "company_id"),
+        CheckConstraint("entity_type IN ('movement', 'manual_entry', 'data_refresh')", name="CK_supervision_entity_type"),
+        CheckConstraint("action IN ('include', 'exclude', 'insert', 'update', 'delete', 'refresh', 'create', 'modify')", name="CK_supervision_action"),
+    )

@@ -16,6 +16,7 @@ from sqlalchemy import desc
 from app.database import get_db
 from app.auth_utils import get_current_admin_user
 from app import models, schemas
+from app.routers.supervision import create_supervision_log
 
 router = APIRouter(prefix="/data-refresh", tags=["Data Refresh"])
 
@@ -308,6 +309,20 @@ async def start_data_refresh(
     db.add(new_execution)
     db.commit()
     db.refresh(new_execution)
+    
+    # Log the data refresh start
+    create_supervision_log(
+        db=db,
+        entity_type="data_refresh",
+        entity_id=new_execution.execution_id,
+        action="refresh",
+        user=current_user,
+        description=f"Démarré l'actualisation des données depuis Odoo",
+        details={
+            "execution_id": new_execution.execution_id,
+            "jobs": [job['name'] for job in ETL_JOBS]
+        }
+    )
     
     # Start background task
     from app.database import DATABASE_URL

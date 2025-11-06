@@ -333,6 +333,22 @@ class DataRefreshStatusResponse(BaseModel):
     isRunning: bool
     currentExecution: Optional[DataRefreshExecutionResponse] = None
 
+# Supervision Log schemas
+class SupervisionLogResponse(BaseModel):
+    logId: int
+    entityType: str
+    entityId: Optional[int] = None
+    action: str
+    userId: int
+    userName: str
+    timestamp: datetime
+    details: Optional[dict] = None
+    description: Optional[str] = None
+    companyId: Optional[int] = None
+    
+    class Config:
+        from_attributes = True
+
 class DataRefreshProgressUpdate(BaseModel):
     executionId: int
     progressPercentage: int

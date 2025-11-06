@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
+from app.auth_utils import get_current_user
 from app import models, schemas
+from app.routers.supervision import create_supervision_log
 from datetime import datetime
 
 router = APIRouter(prefix="/movements", tags=["movements"])
@@ -74,8 +76,13 @@ def activate_movements(data: schemas.MovementActivate, db: Session = Depends(get
     return {"message": "Movements activated successfully"}
 
 @router.post("/exclude-from-analytics")
-def exclude_from_analytics(data: schemas.MovementExcludeFromAnalytics, db: Session = Depends(get_db)):
+def exclude_from_analytics(
+    data: schemas.MovementExcludeFromAnalytics,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Exclude or include movements from analytics calculations"""
+    
     updated_count = 0
     for movement_id in data.ids:
         movement = db.query(models.Movement).filter(models.Movement.movement_id == int(movement_id)).first()
@@ -83,10 +90,32 @@ def exclude_from_analytics(data: schemas.MovementExcludeFromAnalytics, db: Sessi
             movement.exclude_from_analytics = data.exclude
             movement.updated_at = datetime.utcnow()
             updated_count += 1
+            
+            # Log the action
+            action = "exclude" if data.exclude else "include"
+            reference_info = f" - Ref: {movement.reference}" if movement.reference else ""
+            description = f"{'Exclu' if data.exclude else 'Inclus'} le mouvement '{movement.type}'{reference_info} des analyses"
+            create_supervision_log(
+                db=db,
+                entity_type="movement",
+                entity_id=movement.movement_id,
+                action=action,
+                user=current_user,
+                description=description,
+                company_id=movement.company_id,
+                details={
+                    "reference": movement.reference,
+                    "reference_type": movement.reference_type,
+                    "movement_type": movement.type,
+                    "movement_amount": float(movement.amount),
+                    "exclude_from_analytics": data.exclude
+                }
+            )
     
     db.commit()
-    action = "excluded from" if data.exclude else "included in"
-    return {"message": f"{updated_count} movements {action} analytics successfully"}
+    
+    action_text = "excluded from" if data.exclude else "included in"
+    return {"message": f"{updated_count} movements {action_text} analytics successfully"}
 
 @router.post("/refresh")
 def refresh_movements():

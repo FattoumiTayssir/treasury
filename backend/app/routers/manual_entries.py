@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from .. import models, schemas
 from ..database import get_db
 from ..auth_utils import get_current_user
+from ..routers.supervision import create_supervision_log
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import json
@@ -292,6 +293,28 @@ def create_manual_entry(
     # Get the first movement for response
     first_movement = movements[0]
     
+    # Log the creation
+    reference_info = f" - Ref: {first_movement.reference}" if first_movement.reference else ""
+    occurrences_text = f"{len(movements)} occurrence{'s' if len(movements) > 1 else ''}"
+    create_supervision_log(
+        db=db,
+        entity_type="manual_entry",
+        entity_id=db_entry.manual_entry_id,
+        action="insert",
+        user=current_user,
+        description=f"Créé l'entrée manuelle '{first_movement.type}'{reference_info} avec {occurrences_text}",
+        company_id=first_movement.company_id,
+        details={
+            "reference": first_movement.reference,
+            "reference_type": first_movement.reference_type,
+            "entry_type": first_movement.type,
+            "frequency": db_entry.frequency,
+            "amount": float(first_movement.amount),
+            "sign": first_movement.sign,
+            "occurrences": len(movements)
+        }
+    )
+    
     # Extract custom_dates from recurrence JSON if present
     custom_dates = None
     if db_entry.recurrence and isinstance(db_entry.recurrence, dict):
@@ -320,7 +343,12 @@ def create_manual_entry(
     )
 
 @router.put("/{id}", response_model=schemas.ManualEntryResponse)
-def update_manual_entry(id: str, entry: schemas.ManualEntryUpdate, db: Session = Depends(get_db)):
+def update_manual_entry(
+    id: str,
+    entry: schemas.ManualEntryUpdate,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     db_entry = db.query(models.ManualEntry).filter(models.ManualEntry.manual_entry_id == int(id)).first()
     if not db_entry:
         raise HTTPException(status_code=404, detail="Manual entry not found")
@@ -358,6 +386,26 @@ def update_manual_entry(id: str, entry: schemas.ManualEntryUpdate, db: Session =
     
     db.commit()
     db.refresh(db_entry)
+    
+    # Log the update
+    if movement:
+        reference_info = f" - Ref: {movement.reference}" if movement.reference else ""
+        create_supervision_log(
+            db=db,
+            entity_type="manual_entry",
+            entity_id=db_entry.manual_entry_id,
+            action="update",
+            user=current_user,
+            description=f"Modifié l'entrée manuelle '{movement.type}'{reference_info}",
+            company_id=movement.company_id,
+            details={
+                "reference": movement.reference,
+                "reference_type": movement.reference_type,
+                "entry_type": movement.type,
+                "frequency": db_entry.frequency,
+                "amount": float(movement.amount) if movement.amount else None
+            }
+        )
     
     return schemas.ManualEntryResponse(
         id=str(db_entry.manual_entry_id),

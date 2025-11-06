@@ -12,6 +12,8 @@ import type {
   CashFlowAnalysis,
   TreasuryMetrics,
   AnalyticsFilters,
+  SupervisionLog,
+  SupervisionStats,
 } from '@/types'
 
 const api = axios.create({
@@ -166,6 +168,21 @@ export const dataRefreshApi = {
   start: () => api.post<{ message: string; executionId: number; status: string }>('/data-refresh/start'),
   getStatus: () => api.get<DataRefreshStatus>('/data-refresh/status'),
   getHistory: (limit = 20) => api.get<DataRefreshExecution[]>('/data-refresh/history', { params: { limit } }),
+}
+
+// Supervision
+export const supervisionApi = {
+  getLogs: (params?: {
+    entity_type?: string
+    action?: string
+    user_id?: number
+    company_id?: number
+    date_from?: string
+    date_to?: string
+    limit?: number
+    offset?: number
+  }) => api.get<SupervisionLog[]>('/supervision/logs', { params }),
+  getStats: () => api.get<SupervisionStats>('/supervision/stats'),
 }
 
 export default api
