@@ -344,22 +344,25 @@ export function UserDialog({
                             Voir
                           </label>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`modify-${perm.tabName}`}
-                            checked={perm.canModify}
-                            onCheckedChange={(checked) =>
-                              handlePermissionChange(perm.tabName, 'canModify', checked as boolean)
-                            }
-                          />
-                          <label
-                            htmlFor={`modify-${perm.tabName}`}
-                            className="text-sm flex items-center gap-1 cursor-pointer"
-                          >
-                            <Edit className="w-4 h-4" />
-                            Modifier
-                          </label>
-                        </div>
+                        {/* Hide Modifier checkbox for analytics tab (read-only) */}
+                        {perm.tabName !== 'analytics' && (
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`modify-${perm.tabName}`}
+                              checked={perm.canModify}
+                              onCheckedChange={(checked) =>
+                                handlePermissionChange(perm.tabName, 'canModify', checked as boolean)
+                              }
+                            />
+                            <label
+                              htmlFor={`modify-${perm.tabName}`}
+                              className="text-sm flex items-center gap-1 cursor-pointer"
+                            >
+                              <Edit className="w-4 h-4" />
+                              Modifier
+                            </label>
+                          </div>
+                        )}
                       </div>
                     </div>
                     {/* Show "Own Data Only" option for movements and manual-entries */}

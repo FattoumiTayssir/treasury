@@ -30,7 +30,7 @@ export function SimulationMovementDetail({ open, onClose, movement }: Simulation
         
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <Badge variant={movement.sign === 'Entrée' ? 'default' : 'destructive'}>
+            <Badge variant={movement.sign === 'Entrée' ? 'success' : 'destructive'}>
               {movement.sign}
             </Badge>
             <span className="text-2xl font-bold">{movement.type}</span>

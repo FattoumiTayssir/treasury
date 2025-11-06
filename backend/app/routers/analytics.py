@@ -262,7 +262,8 @@ def get_cash_flow_analysis(
     monthly_data = defaultdict(lambda: {
         "inflow": 0,
         "outflow": 0,
-        "balances": []
+        "balances": [],
+        "date": None  # Store a representative date for sorting
     })
     
     baseline_balance = float(treasury_baseline.amount)
@@ -280,10 +281,17 @@ def get_cash_flow_analysis(
             running_balance -= amount
         
         monthly_data[month_key]["balances"].append(running_balance)
+        
+        # Store the first day of the month for sorting
+        if monthly_data[month_key]["date"] is None:
+            monthly_data[month_key]["date"] = movement.movement_date.replace(day=1)
     
-    # Get unique months from filtered movements, sorted
+    # Get unique months from filtered movements, sorted by actual date
     if filtered_movements:
-        unique_months = sorted(set(m.movement_date.strftime("%b %Y") for m in filtered_movements))
+        # Sort by the actual date, not the string representation
+        unique_months_with_dates = [(month, data["date"]) for month, data in monthly_data.items() if data["date"]]
+        unique_months_with_dates.sort(key=lambda x: x[1])
+        unique_months = [month for month, _ in unique_months_with_dates]
     else:
         # If no movements in range, show current month
         unique_months = [datetime.now().strftime("%b %Y")]

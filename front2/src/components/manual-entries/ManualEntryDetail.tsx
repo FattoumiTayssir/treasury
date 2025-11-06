@@ -30,7 +30,7 @@ export function ManualEntryDetail({ open, onClose, entry }: ManualEntryDetailPro
         
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <Badge variant={entry.sign === 'Entrée' ? 'default' : 'destructive'}>
+            <Badge variant={entry.sign === 'Entrée' ? 'success' : 'destructive'}>
               {entry.sign}
             </Badge>
             <span className="text-2xl font-bold">{entry.type}</span>
