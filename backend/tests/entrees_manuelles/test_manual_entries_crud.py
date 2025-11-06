@@ -84,7 +84,6 @@ class TestManualEntriesCRUD:
             "sign": "Sortie",
             "frequency": "Une seule fois",
             "start_date": tomorrow,
-            "visibility": "Public",
             "status": "Actif",
             "note": "Test salary payment"
         }
@@ -122,7 +121,6 @@ class TestManualEntriesCRUD:
             "frequency": "Mensuel",
             "start_date": start_date,
             "end_date": end_date,
-            "visibility": "Public",
             "status": "Actif",
             "reference": "TEST-MONTHLY"
         }
@@ -168,7 +166,6 @@ class TestManualEntriesCRUD:
             "frequency": "Dates personnalisées",
             "start_date": date1,
             "custom_dates": [date1, date2, date3],
-            "visibility": "Public",
             "status": "Actif"
         }
         
@@ -210,8 +207,7 @@ class TestManualEntriesCRUD:
                 "sign": "Sortie",
                 "frequency": "Une seule fois",
                 "start_date": tomorrow,
-                "visibility": "Public",
-                "status": "Actif"
+                    "status": "Actif"
             }
             client.post(
                 "/manual-entries",
@@ -245,7 +241,6 @@ class TestManualEntriesCRUD:
             "sign": "Sortie",
             "frequency": "Une seule fois",
             "start_date": tomorrow,
-            "visibility": "Public",
             "status": "Actif"
         }
         create_response = client.post(
@@ -283,7 +278,6 @@ class TestManualEntriesCRUD:
             "sign": "Sortie",
             "frequency": "Une seule fois",
             "start_date": tomorrow,
-            "visibility": "Public",
             "status": "Actif"
         }
         create_response = client.post(
@@ -327,8 +321,7 @@ class TestManualEntriesCRUD:
                 "sign": "Sortie",
                 "frequency": "Une seule fois",
                 "start_date": tomorrow,
-                "visibility": "Public",
-                "status": "Actif"
+                    "status": "Actif"
             }
             response = client.post(
                 "/manual-entries",
@@ -367,7 +360,6 @@ class TestManualEntriesCRUD:
             "sign": "Sortie",
             "frequency": "Une seule fois",
             "start_date": "2025-12-01",
-            "visibility": "Public",
             "status": "Actif"
         }
         
@@ -392,7 +384,6 @@ class TestManualEntriesCRUD:
             "sign": "Sortie",
             "frequency": "Une seule fois",
             "start_date": "2025-12-01",
-            "visibility": "Public",
             "status": "Actif"
         }
         
@@ -416,7 +407,6 @@ class TestManualEntriesCRUD:
             "sign": "Sortie",
             "frequency": "Une seule fois",
             "start_date": yesterday,
-            "visibility": "Public",
             "status": "Actif"
         }
         

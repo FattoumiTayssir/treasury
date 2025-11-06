@@ -255,11 +255,11 @@ with conn.cursor() as cur:
         archive_version = 1
         
         insert_sql = (
-            'INSERT INTO movement (company_id, manual_entry_id, category, type, amount, sign, movement_date, reference_type, reference, reference_status, source, note, visibility, status, created_at, created_by, odoo_link, updated_at, updated_by, archive_version, exchange_rate) '
-            'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
+            'INSERT INTO movement (company_id, manual_entry_id, category, type, amount, sign, movement_date, reference_type, reference, reference_status, source, note, status, created_at, created_by, odoo_link, updated_at, updated_by, archive_version, exchange_rate) '
+            'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
         )
         params = (
-            company_id, None, "Achat", ETL_TYPE, amount, sign, movement_date, reference_type, name, reference_status, "Odoo", "", "Public", "Actif", NOW_ISO, created_by_id, odoo_link, NOW_ISO, created_by_id, archive_version, exchange_rate,
+            company_id, None, "Achat", ETL_TYPE, amount, sign, movement_date, reference_type, name, reference_status, "Odoo", "", "Actif", NOW_ISO, created_by_id, odoo_link, NOW_ISO, created_by_id, archive_version, exchange_rate,
         )
         cur.execute(insert_sql, params)
         inserted_movement_refs.add(ref_key)
