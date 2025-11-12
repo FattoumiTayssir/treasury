@@ -184,6 +184,7 @@ class UserTabPermission(Base):
     can_view = Column(Boolean, nullable=False, server_default="false")
     can_modify = Column(Boolean, nullable=False, server_default="false")
     own_data_only = Column(Boolean, nullable=False, server_default="false")
+    allowed_categories = Column(JSON, nullable=True)  # Array of categories: ['RH', 'Achat', etc.]
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
     

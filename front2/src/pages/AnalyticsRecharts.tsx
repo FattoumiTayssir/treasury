@@ -18,7 +18,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
 import { TrendingUp, TrendingDown, DollarSign, ArrowUpRight, Info } from 'lucide-react'
-import { analyticsApi, treasuryApi } from '@/services/api'
+import { analyticsApi, treasuryApi, movementsApi } from '@/services/api'
 import { useDataStore } from '@/store/dataStore'
 import {
   generateMockForecast,
@@ -32,6 +32,7 @@ import type {
   CashFlowAnalysis,
   TreasuryMetrics,
   TreasuryBalance,
+  Category,
 } from '@/types'
 
 // Color palette
@@ -80,6 +81,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   )
 }
 
+const categories: Category[] = ['RH', 'Achat', 'Vente', 'Compta', 'Autre']
+
 export default function AnalyticsRecharts() {
   const { selectedCompanies, companies } = useDataStore()
   const selectedCompany = selectedCompanies[0] || ''
@@ -98,6 +101,11 @@ export default function AnalyticsRecharts() {
     date.setMonth(date.getMonth() + 3)
     return date.toISOString().split('T')[0]
   })
+  
+  // Category and Type filters
+  const [selectedCategories, setSelectedCategories] = useState<Category[]>([])
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([])
+  const [availableTypes, setAvailableTypes] = useState<string[]>([])
   
   // Calculated metrics from filtered data
   const [filteredMetrics, setFilteredMetrics] = useState<{
@@ -121,6 +129,23 @@ export default function AnalyticsRecharts() {
     }
   }, [selectedCompany])
 
+  // Load available types from movements
+  useEffect(() => {
+    const loadTypes = async () => {
+      if (!selectedCompany) return
+      try {
+        const response = await movementsApi.getAll()
+        const types = [...new Set(response.data
+          .filter(m => m.companyId === selectedCompany)
+          .map(m => m.type))]
+        setAvailableTypes(types.sort())
+      } catch (error) {
+        console.error('Failed to load types:', error)
+      }
+    }
+    loadTypes()
+  }, [selectedCompany])
+
   const loadAnalytics = useCallback(async () => {
     if (!selectedCompany || !treasuryBalance) return
 
@@ -131,6 +156,8 @@ export default function AnalyticsRecharts() {
         forecastDays: 90,
         dateFrom: dateFrom,
         dateTo: dateTo,
+        category: selectedCategories.length > 0 ? selectedCategories : undefined,
+        type: selectedTypes.length > 0 ? selectedTypes : undefined,
       }
       
       console.log('Loading analytics with filters:', filters)
@@ -199,7 +226,7 @@ export default function AnalyticsRecharts() {
     } finally {
       setLoading(false)
     }
-  }, [selectedCompany, treasuryBalance, dateFrom, dateTo])
+  }, [selectedCompany, treasuryBalance, dateFrom, dateTo, selectedCategories, selectedTypes])
 
   useEffect(() => {
     if (selectedCompany) {
@@ -211,7 +238,7 @@ export default function AnalyticsRecharts() {
     if (selectedCompany && treasuryBalance) {
       loadAnalytics()
     }
-  }, [selectedCompany, treasuryBalance, dateFrom, dateTo, loadAnalytics])
+  }, [selectedCompany, treasuryBalance, loadAnalytics])
 
   const getDeltaType = (value: number): 'increase' | 'decrease' => {
     return value >= 0 ? 'increase' : 'decrease'
@@ -486,6 +513,87 @@ export default function AnalyticsRecharts() {
         {/* Cash Flow */}
         <TabsContent value="cashflow">
           <div className="space-y-4">
+            {/* Filters for Cash Flow */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Filtres</CardTitle>
+                <CardDescription>Filtrer les flux de trésorerie par catégorie et type</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  {/* Category Filter */}
+                  <div className="flex-1">
+                    <Label htmlFor="cashflow-categories" className="text-sm font-medium text-gray-700 mb-2 block">
+                      Catégories
+                    </Label>
+                    <div className="flex flex-wrap gap-2">
+                      {categories.map((cat) => (
+                        <button
+                          key={cat}
+                          onClick={() => {
+                            setSelectedCategories(prev =>
+                              prev.includes(cat)
+                                ? prev.filter(c => c !== cat)
+                                : [...prev, cat]
+                            )
+                          }}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            selectedCategories.includes(cat)
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                      {selectedCategories.length > 0 && (
+                        <button
+                          onClick={() => setSelectedCategories([])}
+                          className="px-3 py-1.5 rounded-md text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200"
+                        >
+                          Effacer
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {/* Type Filter */}
+                  <div className="flex-1">
+                    <Label htmlFor="cashflow-types" className="text-sm font-medium text-gray-700 mb-2 block">
+                      Types
+                    </Label>
+                    <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                      {availableTypes.map((type) => (
+                        <button
+                          key={type}
+                          onClick={() => {
+                            setSelectedTypes(prev =>
+                              prev.includes(type)
+                                ? prev.filter(t => t !== type)
+                                : [...prev, type]
+                            )
+                          }}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            selectedTypes.includes(type)
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {type}
+                        </button>
+                      ))}
+                      {selectedTypes.length > 0 && (
+                        <button
+                          onClick={() => setSelectedTypes([])}
+                          className="px-3 py-1.5 rounded-md text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200"
+                        >
+                          Effacer
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
             <Card>
               <CardHeader>
                 <CardTitle>Flux de Trésorerie Mensuels</CardTitle>
@@ -613,6 +721,88 @@ export default function AnalyticsRecharts() {
 
         {/* Trends */}
         <TabsContent value="trends">
+          <div className="space-y-4">
+            {/* Filters for Trends */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Filtres</CardTitle>
+                <CardDescription>Filtrer les tendances par catégorie et type</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  {/* Category Filter */}
+                  <div className="flex-1">
+                    <Label htmlFor="trends-categories" className="text-sm font-medium text-gray-700 mb-2 block">
+                      Catégories
+                    </Label>
+                    <div className="flex flex-wrap gap-2">
+                      {categories.map((cat) => (
+                        <button
+                          key={cat}
+                          onClick={() => {
+                            setSelectedCategories(prev =>
+                              prev.includes(cat)
+                                ? prev.filter(c => c !== cat)
+                                : [...prev, cat]
+                            )
+                          }}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            selectedCategories.includes(cat)
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                      {selectedCategories.length > 0 && (
+                        <button
+                          onClick={() => setSelectedCategories([])}
+                          className="px-3 py-1.5 rounded-md text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200"
+                        >
+                          Effacer
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {/* Type Filter */}
+                  <div className="flex-1">
+                    <Label htmlFor="trends-types" className="text-sm font-medium text-gray-700 mb-2 block">
+                      Types
+                    </Label>
+                    <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                      {availableTypes.map((type) => (
+                        <button
+                          key={type}
+                          onClick={() => {
+                            setSelectedTypes(prev =>
+                              prev.includes(type)
+                                ? prev.filter(t => t !== type)
+                                : [...prev, type]
+                            )
+                          }}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            selectedTypes.includes(type)
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {type}
+                        </button>
+                      ))}
+                      {selectedTypes.length > 0 && (
+                        <button
+                          onClick={() => setSelectedTypes([])}
+                          className="px-3 py-1.5 rounded-md text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200"
+                        >
+                          Effacer
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           <Card>
             <CardHeader>
               <CardTitle>Tendances de Trésorerie</CardTitle>
@@ -666,6 +856,7 @@ export default function AnalyticsRecharts() {
               </ResponsiveContainer>
             </CardContent>
           </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

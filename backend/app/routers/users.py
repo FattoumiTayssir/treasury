@@ -22,7 +22,8 @@ def build_user_response(user: models.User) -> schemas.UserResponse:
             tabLabel=perm.tab.tab_label,
             canView=perm.can_view,
             canModify=perm.can_modify,
-            ownDataOnly=perm.own_data_only
+            ownDataOnly=perm.own_data_only,
+            allowedCategories=perm.allowed_categories
         ))
     
     return schemas.UserResponse(
@@ -185,7 +186,8 @@ def update_user(
                     tab_id=tab.tab_id,
                     can_view=perm.canView,
                     can_modify=perm.canModify,
-                    own_data_only=perm.ownDataOnly
+                    own_data_only=perm.ownDataOnly,
+                    allowed_categories=perm.allowedCategories
                 )
                 db.add(user_perm)
     

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { usersApi } from '@/services/api'
-import type { User, Company, TabDefinition } from '@/types'
+import type { User, Company, TabDefinition, Category } from '@/types'
 import {
   Dialog,
   DialogContent,
@@ -23,6 +23,8 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/hooks/use-toast'
 import { Eye, Edit } from 'lucide-react'
 
+const categories: Category[] = ['RH', 'Achat', 'Vente', 'Compta', 'Autre']
+
 interface UserDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -38,6 +40,7 @@ interface PermissionState {
   canView: boolean
   canModify: boolean
   ownDataOnly: boolean
+  allowedCategories?: Category[]
 }
 
 export function UserDialog({
@@ -76,6 +79,7 @@ export function UserDialog({
             canView: existingPerm?.canView || false,
             canModify: existingPerm?.canModify || false,
             ownDataOnly: existingPerm?.ownDataOnly || false,
+            allowedCategories: existingPerm?.allowedCategories || undefined,
           }
         })
         setPermissions(userPerms)
@@ -95,6 +99,7 @@ export function UserDialog({
             canView: false,
             canModify: false,
             ownDataOnly: false,
+            allowedCategories: undefined,
           }))
         )
       }
@@ -123,6 +128,22 @@ export function UserDialog({
             }
           : p
       )
+    )
+  }
+
+  const handleCategoryToggle = (tabName: string, category: Category) => {
+    setPermissions(prev =>
+      prev.map(p => {
+        if (p.tabName !== tabName) return p
+        const currentCategories = p.allowedCategories || []
+        const newCategories = currentCategories.includes(category)
+          ? currentCategories.filter(c => c !== category)
+          : [...currentCategories, category]
+        return {
+          ...p,
+          allowedCategories: newCategories.length > 0 ? newCategories : undefined,
+        }
+      })
     )
   }
 
@@ -170,6 +191,7 @@ export function UserDialog({
             canView: p.canView,
             canModify: p.canModify,
             ownDataOnly: p.ownDataOnly,
+            allowedCategories: p.allowedCategories,
           })),
         }
 
@@ -202,6 +224,7 @@ export function UserDialog({
             canView: p.canView,
             canModify: p.canModify,
             ownDataOnly: p.ownDataOnly,
+            allowedCategories: p.allowedCategories,
           })),
         })
 
@@ -365,9 +388,9 @@ export function UserDialog({
                         )}
                       </div>
                     </div>
-                    {/* Show "Own Data Only" option for movements and manual-entries */}
+                    {/* Show "Own Data Only" option and category selection for movements and manual-entries */}
                     {(perm.tabName === 'movements' || perm.tabName === 'manual-entries') && perm.canView && (
-                      <div className="ml-4 pt-2 border-t">
+                      <div className="ml-4 pt-2 border-t space-y-3">
                         <div className="flex items-center space-x-2">
                           <Checkbox
                             id={`own-${perm.tabName}`}
@@ -382,6 +405,32 @@ export function UserDialog({
                           >
                             Uniquement ses propres données
                           </label>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Catégories autorisées (laisser vide pour toutes)
+                          </Label>
+                          <div className="flex flex-wrap gap-2">
+                            {categories.map((cat) => (
+                              <button
+                                key={cat}
+                                type="button"
+                                onClick={() => handleCategoryToggle(perm.tabName, cat)}
+                                className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                                  perm.allowedCategories?.includes(cat)
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                              >
+                                {cat}
+                              </button>
+                            ))}
+                          </div>
+                          {perm.allowedCategories && perm.allowedCategories.length > 0 && (
+                            <p className="text-xs text-gray-500 italic">
+                              L'utilisateur ne verra que les données des catégories : {perm.allowedCategories.join(', ')}
+                            </p>
+                          )}
                         </div>
                       </div>
                     )}

@@ -30,6 +30,7 @@ class UserTabPermissionResponse(BaseModel):
     canView: bool
     canModify: bool
     ownDataOnly: bool = False
+    allowedCategories: Optional[List[str]] = None
 
     class Config:
         from_attributes = True
@@ -39,6 +40,7 @@ class UserTabPermissionUpdate(BaseModel):
     canView: bool
     canModify: bool
     ownDataOnly: bool = False
+    allowedCategories: Optional[List[str]] = None
 
 # User schemas
 class UserBase(BaseModel):

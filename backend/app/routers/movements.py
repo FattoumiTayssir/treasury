@@ -10,10 +10,34 @@ from datetime import datetime
 router = APIRouter(prefix="/movements", tags=["movements"])
 
 @router.get("", response_model=List[schemas.MovementResponse])
-def get_movements(db: Session = Depends(get_db)):
-    movements = db.query(models.Movement).filter(
+def get_movements(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # Base query: get all non-archived movements
+    query = db.query(models.Movement).filter(
         models.Movement.status != "Archivé"
-    ).all()
+    )
+    
+    # Apply category-based filtering for non-Admin users
+    if current_user.role != "Admin":
+        # Get user's permission for movements tab
+        movement_perm = db.query(models.UserTabPermission).join(
+            models.TabPermission
+        ).filter(
+            models.UserTabPermission.user_id == current_user.user_id,
+            models.TabPermission.tab_name == "movements"
+        ).first()
+        
+        # Apply category filter if specified
+        if movement_perm and movement_perm.allowed_categories:
+            query = query.filter(models.Movement.category.in_(movement_perm.allowed_categories))
+        
+        # Apply own data only filter if specified
+        if movement_perm and movement_perm.own_data_only:
+            query = query.filter(models.Movement.created_by == current_user.user_id)
+    
+    movements = query.all()
     
     return [
         schemas.MovementResponse(

@@ -100,9 +100,12 @@ def get_forecast(
     date_from: Optional[str] = Query(None, alias="dateFrom"),
     date_to: Optional[str] = Query(None, alias="dateTo"),
     forecast_days: int = Query(90, alias="forecastDays"),
+    category: Optional[List[str]] = Query(None),
+    type: Optional[List[str]] = Query(None),
     db: Session = Depends(get_db)
 ):
     """Generate forecast with actual and predicted balances from movements"""
+    print(f"[FORECAST] Filters received - category: {category}, type: {type}")
     
     # Get treasury baseline
     treasury_baseline = db.query(models.TreasuryBalance).filter(
@@ -116,11 +119,21 @@ def get_forecast(
     reference_date = treasury_baseline.reference_date
     
     # Get all active movements (excluding those marked to exclude from analytics)
-    movements = db.query(models.Movement).filter(
+    query = db.query(models.Movement).filter(
         models.Movement.company_id == company_id,
         models.Movement.status == "Actif",
         models.Movement.exclude_from_analytics == False
-    ).order_by(models.Movement.movement_date).all()
+    )
+    
+    # Apply category filter
+    if category and len(category) > 0:
+        query = query.filter(models.Movement.category.in_(category))
+    
+    # Apply type filter
+    if type and len(type) > 0:
+        query = query.filter(models.Movement.type.in_(type))
+    
+    movements = query.order_by(models.Movement.movement_date).all()
     
     # Create a dictionary of movements by date
     movements_by_date = defaultdict(lambda: {"inflow": 0, "outflow": 0})
@@ -179,9 +192,12 @@ def get_category_breakdown(
     company_id: str = Query(..., alias="companyId"),
     date_from: Optional[str] = Query(None, alias="dateFrom"),
     date_to: Optional[str] = Query(None, alias="dateTo"),
+    category: Optional[List[str]] = Query(None),
+    type: Optional[List[str]] = Query(None),
     db: Session = Depends(get_db)
 ):
     """Get breakdown of movements by category"""
+    print(f"[CATEGORY BREAKDOWN] Filters received - category: {category}, type: {type}")
     
     # Build query
     query = db.query(
@@ -199,6 +215,14 @@ def get_category_breakdown(
         query = query.filter(models.Movement.movement_date >= datetime.fromisoformat(date_from))
     if date_to:
         query = query.filter(models.Movement.movement_date <= datetime.fromisoformat(date_to))
+    
+    # Apply category filter
+    if category and len(category) > 0:
+        query = query.filter(models.Movement.category.in_(category))
+    
+    # Apply type filter
+    if type and len(type) > 0:
+        query = query.filter(models.Movement.type.in_(type))
     
     # Group by category
     results = query.group_by(models.Movement.category).all()
@@ -230,9 +254,12 @@ def get_cash_flow_analysis(
     company_id: str = Query(..., alias="companyId"),
     date_from: Optional[str] = Query(None, alias="dateFrom"),
     date_to: Optional[str] = Query(None, alias="dateTo"),
+    category: Optional[List[str]] = Query(None),
+    type: Optional[List[str]] = Query(None),
     db: Session = Depends(get_db)
 ):
     """Get monthly cash flow analysis"""
+    print(f"[CASH FLOW] Filters received - category: {category}, type: {type}")
     
     # Get treasury baseline
     treasury_baseline = db.query(models.TreasuryBalance).filter(
@@ -243,11 +270,21 @@ def get_cash_flow_analysis(
         return []
     
     # Get all active movements (excluding those marked to exclude from analytics)
-    movements = db.query(models.Movement).filter(
+    query = db.query(models.Movement).filter(
         models.Movement.company_id == company_id,
         models.Movement.status == "Actif",
         models.Movement.exclude_from_analytics == False
-    ).order_by(models.Movement.movement_date).all()
+    )
+    
+    # Apply category filter
+    if category and len(category) > 0:
+        query = query.filter(models.Movement.category.in_(category))
+    
+    # Apply type filter
+    if type and len(type) > 0:
+        query = query.filter(models.Movement.type.in_(type))
+    
+    movements = query.order_by(models.Movement.movement_date).all()
     
     # Apply date filters to movements if provided
     filtered_movements = movements

@@ -96,6 +96,7 @@ export interface TabPermission {
   canView: boolean
   canModify: boolean
   ownDataOnly?: boolean  // For movements and manual-entries: can only see/modify own data
+  allowedCategories?: Category[]  // For movements and manual-entries: restrict access by category
 }
 
 export interface User {
@@ -255,5 +256,6 @@ export interface AnalyticsFilters {
   dateTo?: string
   companyId?: string
   category?: Category[]
+  type?: string[]
   forecastDays?: number
 }

@@ -81,7 +81,26 @@ def check_reference_exists(
     )
 
 @router.get("", response_model=List[schemas.ManualEntryResponse])
-def get_manual_entries(db: Session = Depends(get_db)):
+def get_manual_entries(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # Get user's permission for manual-entries tab
+    allowed_categories = None
+    own_data_only = False
+    
+    if current_user.role != "Admin":
+        manual_entry_perm = db.query(models.UserTabPermission).join(
+            models.TabPermission
+        ).filter(
+            models.UserTabPermission.user_id == current_user.user_id,
+            models.TabPermission.tab_name == "manual-entries"
+        ).first()
+        
+        if manual_entry_perm:
+            allowed_categories = manual_entry_perm.allowed_categories
+            own_data_only = manual_entry_perm.own_data_only
+    
     entries = db.query(models.ManualEntry).all()
     
     result = []
@@ -92,6 +111,13 @@ def get_manual_entries(db: Session = Depends(get_db)):
         ).first()
         
         if movement:
+            # Apply category filter if specified
+            if allowed_categories and movement.category not in allowed_categories:
+                continue
+            
+            # Apply own data only filter if specified
+            if own_data_only and movement.created_by != current_user.user_id:
+                continue
             # Extract custom_dates from recurrence JSON if present
             custom_dates = None
             if entry.recurrence and isinstance(entry.recurrence, dict):
