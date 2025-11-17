@@ -297,7 +297,7 @@ class RefreshTokenResponse(BaseModel):
 
 # Last refresh schemas
 class LastRefreshResponse(BaseModel):
-    lastRefresh: str
+    lastRefresh: Optional[str] = None
 
 # Odoo reference schemas
 class ReferenceStateResponse(BaseModel):
