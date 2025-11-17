@@ -42,6 +42,8 @@ services:
       ODOO_DB: ${ODOO_DB}
       ODOO_USERNAME: ${ODOO_USERNAME}
       ODOO_PASSWORD: ${ODOO_PASSWORD}
+    volumes:
+      - ./etl_jobs:/etl_jobs:ro
     depends_on:
       postgres:
         condition: service_healthy
