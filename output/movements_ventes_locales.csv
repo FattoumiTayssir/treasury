@@ -1,3 +1,0 @@
-company_id,manual_entry_id,category,type,amount,sign,movement_date,reference_type,reference,reference_status,source,note,visibility,status,created_at,created_by,odoo_link,updated_at,updated_by,disabled_at,disabled_by,disable_reason,archived_at,archived_by,archive_reason,archive_version
-1,,Vente,Ventes locales,9.241,Entrée,2025-10-13,Facture,S00347,En attente,Odoo,,Public,Actif,2025-09-13T13:12:57.030012Z,1,https://staging-universal.hadooc.com/web#id=140479&model=account.move&view_type=form,2025-09-13T13:12:57.030012Z,,,,,,,1
-1,,Vente,Ventes locales,2.19,Entrée,2025-10-13,Facture,/,En attente,Odoo,,Public,Actif,2025-09-13T13:12:57.030012Z,1,https://staging-universal.hadooc.com/web#id=140478&model=account.move&view_type=form,2025-09-13T13:12:57.030012Z,,,,,,,1
