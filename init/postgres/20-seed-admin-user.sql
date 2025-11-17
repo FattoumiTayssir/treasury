@@ -6,13 +6,13 @@ BEGIN;
 
 -- Insert default admin user
 -- Password hash for 'admin123' using bcrypt
--- Generated with: python -c "from passlib.hash import bcrypt; print(bcrypt.hash('admin123'))"
+-- Generated with: python -c "from passlib.context import CryptContext; pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto'); print(pwd_context.hash('admin123'))"
 INSERT INTO "User" (display_name, email, role, password_hash)
 VALUES (
     'Admin User',
     'admin@treasury.local',
     'Admin',
-    '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYqxvJW6.W2'
+    '$2b$12$YXJLTkZNvnNUb3p2aWWofep31KeN7gBRrS7H6x9Gfdt.VKG1/NfdK'
 )
 ON CONFLICT (email) DO UPDATE 
 SET password_hash = EXCLUDED.password_hash,
