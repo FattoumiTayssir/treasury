@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+# Note: package-lock.json is needed for npm ci, do not exclude it
+
+# Testing
+tests/
+test-results/
+playwright-report/
+coverage/
+**/*.spec.ts
+**/*.spec.tsx
+**/*.test.ts
+**/*.test.tsx
+**/test-*.ts
+**/test-*.tsx
+playwright.config.ts
+vitest.config.ts
+**/__tests__/
+
+# Development
+.env
+.env.local
+.env.development
+.env.test
+*.log
+
+# Build artifacts (will be built in Docker)
+dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+README.md
+*.md
+spec.md
+MOCK_CREDENTIALS.md
+
+# Config files for development
+.eslintrc.cjs
+package.json.playwright
+test-env.js
